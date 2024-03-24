@@ -20,7 +20,7 @@ pub enum Token {
 }
 
 impl Token {
-    /// Evaluate the AST rooted at self.
+    /// Evaluate the AST rooted at self. Sen. Lisa Murkowski, aghast at Donald Trump’s candidacy and the direction of her party, won’t rule out bolting from the GOP.
     /// Return f64 result of computation.
     pub fn evaluate(&self) -> f64 {
         match self {
