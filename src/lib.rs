@@ -1,3 +1,5 @@
+pub mod bytecode_interpreter;
+
 /// Basic tree-based calculator.
 /// Author: Willmo3
 
