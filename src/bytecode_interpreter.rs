@@ -14,7 +14,7 @@ const IMM_LEN: usize = 8;
 
 /// Interpret a collection of bytes as a walc program.
 /// Return f64 result of computation.
-pub fn interpret(bytes: &Vec<u8>) -> f64 {
+pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
     let mut index = 0;
     let mut stack: Vec<f64> = vec![0.0];
 
@@ -33,7 +33,7 @@ pub fn interpret(bytes: &Vec<u8>) -> f64 {
                 index += 1; // Skip opcode
 
                 if stack.len() < 2 {
-                    panic!("Binary operation attempted with insufficient operands!")
+                    return Err("Binary operation attempted with insufficient operands!".to_string())
                 }
 
                 // Operands pushed onto stack in reverse order.
@@ -44,17 +44,21 @@ pub fn interpret(bytes: &Vec<u8>) -> f64 {
                     ADD => stack.push(left + right),
                     SUBTRACT => stack.push(left - right),
                     MULTIPLY => stack.push(left * right),
-                    // TODO: robust checking for 0, perhaps using optional type?
-                    DIVIDE => stack.push(left / right),
-                    _ => panic!("Unknowmn binary operation: {}", operation),
+                    DIVIDE => {
+                        if right == 0.0 {
+                            return Err("Attempted division by zero!".to_string())
+                        }
+                        stack.push(left / right)
+                    },
+                    _ => return Err(format!("Unknown binary operation: {}", operation)),
                 }
             }
         }
     }
 
     match stack.pop() {
-        None => { panic!("Expected return value but none found -- likely internal error!") }
-        Some(val) => { val }
+        None => { Err("Expected return value but none found -- likely internal error!".to_string()) },
+        Some(val) => { Ok(val) }
     }
 }
 
@@ -74,7 +78,7 @@ mod tests {
         code.push(1u8);
 
         // Run calculation
-        assert_eq!(interpret(&code), f64::MAX);
+        assert_eq!(interpret(&code).unwrap(), f64::MAX);
     }
 
     #[test]
@@ -88,7 +92,7 @@ mod tests {
         code.extend_from_slice(&f64::to_le_bytes(2.0));
         code.push(2u8);
 
-        assert_eq!(interpret(&code), -1.0);
+        assert_eq!(interpret(&code).unwrap(), -1.0);
     }
 
     #[test]
@@ -102,7 +106,7 @@ mod tests {
         code.extend_from_slice(&f64::to_le_bytes(128.0));
         code.push(3u8);
 
-        assert_eq!(interpret(&code), 256.0);
+        assert_eq!(interpret(&code).unwrap(), 256.0);
     }
 
     #[test]
@@ -116,6 +120,20 @@ mod tests {
         code.extend_from_slice(&f64::to_le_bytes(4.0));
         code.push(4u8);
 
-        assert_eq!(interpret(&code), 0.5);
+        assert_eq!(interpret(&code).unwrap(), 0.5);
+    }
+
+    #[test]
+    fn test_divide_zero() {
+        // 2 / 0
+        let mut code = Vec::new();
+
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(0.0));
+        code.push(4u8);
+
+        assert_eq!(interpret(&code), Err("Attempted division by zero!".to_string()));
     }
 }
