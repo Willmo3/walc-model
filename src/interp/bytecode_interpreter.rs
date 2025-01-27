@@ -1,6 +1,5 @@
 use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
 
-
 enum Opcode {
     PUSH,
     ADD,
@@ -16,6 +15,7 @@ const IMM_LEN: usize = 8;
 pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
     let mut index = 0;
     let mut stack: Vec<f64> = vec![0.0];
+    let mut errors = String::new();
 
     while index < bytes.len() {
         let operation = bytes[index];
@@ -32,7 +32,8 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
                 index += 1; // Skip opcode
 
                 if stack.len() < 2 {
-                    return Err("Binary operation attempted with insufficient operands!".to_string())
+                    errors.push_str("Binary operation attempted with insufficient operands!\n");
+                    continue
                 }
 
                 // Operands pushed onto stack in reverse order.
@@ -45,19 +46,25 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
                     MULTIPLY => stack.push(left * right),
                     DIVIDE => {
                         if right == 0.0 {
-                            return Err("Attempted division by zero!".to_string())
+                            errors.push_str("Cannot divide by zero.\n");
+                            continue
                         }
                         stack.push(left / right)
                     },
-                    _ => return Err(format!("Unknown binary operation: {}", operation)),
+                    _ => errors.push_str(&format!("Unknown binary operation: {}\n", operation)),
                 }
             }
         }
     }
 
-    match stack.pop() {
-        None => { Err("Expected return value but none found -- likely internal error!".to_string()) },
-        Some(val) => { Ok(val) }
+    if stack.is_empty() {
+        errors.push_str("No result.\n");
+    }
+
+    if errors.is_empty() {
+        Ok(stack.pop().unwrap())
+    } else {
+        Err(errors)
     }
 }
 
@@ -133,6 +140,6 @@ mod tests {
         code.extend_from_slice(&f64::to_le_bytes(0.0));
         code.push(4u8);
 
-        assert_eq!(interpret(&code), Err("Attempted division by zero!".to_string()));
+        assert_eq!(interpret(&code), Err("Cannot divide by zero.\n".to_string()));
     }
 }
