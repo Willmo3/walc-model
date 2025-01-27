@@ -16,27 +16,21 @@ pub enum Token {
 }
 
 impl Token {
-    /// Evaluate the AST rooted at self.
-    /// Return f64 result of computation.
-    pub fn evaluate(&self) -> f64 {
+    /// Traverse AST in postorder, calling visitor fns.
+    /// Order: (left, right, center
+    pub fn postorder_traverse<Visitor: FnMut(&Token) -> ()>(&self, visit_fn: &mut Visitor) {
         match self {
-            Token::Number { value } => { *value }
-            Token::Add { left, right } => {
-                left.evaluate() + right.evaluate()
+            // Binary operations: two children.
+            Token::Add {left, right}
+                | Token::Subtract {left, right}
+                | Token::Multiply {left, right}
+                | Token::Divide { left, right } => {
+                left.postorder_traverse(visit_fn);
+                right.postorder_traverse(visit_fn);
             }
-            Token::Subtract { left, right } => {
-                left.evaluate() - right.evaluate()
-            }
-            Token::Multiply { left, right } => {
-                left.evaluate() * right.evaluate()
-            }
-            Token::Divide { left, right } => {
-                let (left, right) = (left.evaluate(), right.evaluate());
-                if right == 0.0 {
-                    panic!("Divide by zero!");
-                }
-                left / right
-            }
+            // Atoms: no children
+            _ => {}
         }
+        visit_fn(&self);
     }
 }

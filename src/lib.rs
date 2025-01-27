@@ -1,7 +1,8 @@
 /// interpreters for the walc programming language.
 /// Author: Will Morris
 pub mod interp {
-    mod bytecode_interpreter;
+    pub mod bytecode_interpreter;
+    pub mod treewalk_interpreter;
 }
 
 /// Walc syntax tree traversal and manipulation.
