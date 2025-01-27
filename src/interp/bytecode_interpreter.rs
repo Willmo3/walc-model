@@ -14,7 +14,7 @@ const IMM_LEN: usize = 8;
 /// Return f64 result of computation.
 pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
     let mut index = 0;
-    let mut stack: Vec<f64> = vec![0.0];
+    let mut stack: Vec<f64> = Vec::new();
     let mut errors = String::new();
 
     while index < bytes.len() {
@@ -140,6 +140,6 @@ mod tests {
         code.extend_from_slice(&f64::to_le_bytes(0.0));
         code.push(4u8);
 
-        assert_eq!(interpret(&code), Err("Cannot divide by zero.\n".to_string()));
+        assert_eq!(interpret(&code), Err("Cannot divide by zero.\nNo result.\n".to_string()));
     }
 }
