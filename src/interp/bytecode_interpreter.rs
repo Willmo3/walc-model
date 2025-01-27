@@ -1,7 +1,6 @@
-use crate::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
+use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
 
-/// Bytecode interpreter for the walc programming language.
-/// Author: Will Morris
+
 enum Opcode {
     PUSH,
     ADD,
@@ -64,7 +63,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::bytecode_interpreter::interpret;
+    use crate::interp::bytecode_interpreter::interpret;
 
     #[test]
     fn test_add() {
