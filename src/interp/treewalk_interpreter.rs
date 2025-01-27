@@ -22,7 +22,13 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
                     Token::Add {..} => stack.push(left + right),
                     Token::Subtract {..} => stack.push(left - right),
                     Token::Multiply {..} => stack.push(left * right),
-                    Token::Divide {..} => stack.push(left / right),
+                    Token::Divide {..} => {
+                        if right == 0.0 {
+                            errors.push_str("Cannot divide by zero.\n");
+                        } else {
+                            stack.push(left / right)
+                        }
+                    },
                     _ => {
                         errors.push_str("Internal error: invalid token.\n");
                         return
@@ -88,5 +94,15 @@ mod tests {
         let div = Token::Divide { left, right };
 
         assert_eq!(-0.5, interpret(&div).unwrap());
+    }
+
+    #[test]
+    fn test_divide_zero() {
+        // 2 / 0
+        let left = Box::new(Token::Number { value: 1.0 });
+        let right = Box::new(Token::Number { value: 0.0 });
+        let div = Token::Divide { left, right };
+
+        assert_eq!(Err("Cannot divide by zero.\nNo results.\n".to_string()), interpret(&div));
     }
 }
