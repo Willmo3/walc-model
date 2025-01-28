@@ -54,7 +54,7 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
 #[cfg(test)]
 mod tests {
     use crate::ast::token::Token;
-    use crate::interp::treewalk_interpreter::interpret;
+    use crate::ast::treewalk_interpreter::interpret;
 
     #[test]
     fn test_add() {

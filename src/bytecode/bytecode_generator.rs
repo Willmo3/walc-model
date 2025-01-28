@@ -31,7 +31,7 @@ pub fn generate(ast: &Token) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::bytecode_generator::generate;
+    use crate::interp::bytecode_generator::generate;
     use crate::ast::token::Token;
     use crate::interp::bytecode_interpreter::interpret;
 
