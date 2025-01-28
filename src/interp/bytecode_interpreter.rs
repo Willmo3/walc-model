@@ -1,5 +1,8 @@
 use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
 
+// Operation API
+
+/// Opcodes supported by webwalc bytecode.
 enum Opcode {
     PUSH,
     ADD,
@@ -7,7 +10,34 @@ enum Opcode {
     MULTIPLY,
     DIVIDE,
 }
-const OPCODES: &'static[Opcode; 5] = &[PUSH, ADD, SUBTRACT, MULTIPLY, DIVIDE];
+
+// Opcode to byte translation
+impl Opcode {
+    /// Given an Opcode, convert it to its byte representation.
+    pub fn byte_from_opcode(&self) -> u8 {
+        match self {
+            PUSH => 0,
+            ADD => 1,
+            SUBTRACT => 2,
+            MULTIPLY => 3,
+            DIVIDE => 4,
+        }
+    }
+
+    /// Given a byte, convert it to its opcode representation.
+    /// Or panic, if unsupported opcode.
+    pub fn opcode_from_byte(byte: u8) -> Self {
+        match byte {
+            0 => PUSH,
+            1 => ADD,
+            2 => SUBTRACT,
+            3 => MULTIPLY,
+            4 => DIVIDE,
+            _ => panic!("Unknown opcode {}", byte),
+        }
+    }
+}
+
 const IMM_LEN: usize = 8;
 
 /// Interpret a collection of bytes as a walc program.
@@ -19,7 +49,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
 
     while index < bytes.len() {
         let operation = bytes[index];
-        match OPCODES[operation as usize] {
+        match Opcode::opcode_from_byte(operation) {
             PUSH => {
                 index += 1; // Skip opcode.
 
@@ -40,7 +70,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
                 let right = stack.pop().unwrap();
                 let left = stack.pop().unwrap();
 
-                match OPCODES[operation as usize] {
+                match Opcode::opcode_from_byte(operation) {
                     ADD => stack.push(left + right),
                     SUBTRACT => stack.push(left - right),
                     MULTIPLY => stack.push(left * right),
