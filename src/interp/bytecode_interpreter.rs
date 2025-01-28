@@ -3,7 +3,7 @@ use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, S
 // Operation API
 
 /// Opcodes supported by webwalc bytecode.
-enum Opcode {
+pub enum Opcode {
     PUSH,
     ADD,
     SUBTRACT,
