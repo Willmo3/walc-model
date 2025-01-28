@@ -1,4 +1,4 @@
-use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
 
 // Operation API
 
@@ -100,7 +100,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::interp::bytecode_interpreter::interpret;
+    use crate::bytecode::bytecode_interpreter::interpret;
 
     #[test]
     fn test_add() {

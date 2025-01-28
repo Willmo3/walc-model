@@ -4,8 +4,8 @@
 // Author: Will Morris
 
 use crate::ast::token::Token;
-use crate::interp::bytecode_interpreter::Opcode;
-use crate::interp::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::bytecode_interpreter::Opcode;
+use crate::bytecode::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
 
 /// Given an ast, generate a list of bytes corresponding to walc bytecode.
 pub fn generate(ast: &Token) -> Vec<u8> {
@@ -31,9 +31,9 @@ pub fn generate(ast: &Token) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::interp::bytecode_generator::generate;
     use crate::ast::token::Token;
-    use crate::interp::bytecode_interpreter::interpret;
+    use crate::bytecode::bytecode_generator::generate;
+    use crate::bytecode::bytecode_interpreter::interpret;
 
     #[test]
     fn test_add() {
