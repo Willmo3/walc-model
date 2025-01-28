@@ -78,4 +78,15 @@ mod tests {
         let bytecode = generate(&div);
         assert_eq!(-0.5, interpret(&bytecode).unwrap());
     }
+
+    #[test]
+    fn test_divide_zero() {
+        // 2 / 0
+        let left = Box::new(Token::Number { value: 1.0 });
+        let right = Box::new(Token::Number { value: 0.0 });
+        let div = Token::Divide { left, right };
+
+        let bytecode = generate(&div);
+        assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(&bytecode));
+    }
 }
