@@ -41,7 +41,7 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
 
     ast.postorder_traverse(&mut visit_fn);
     if stack.is_empty() {
-        errors.push_str("No results.\n");
+        errors.push_str("No result.\n");
     }
 
     if !errors.is_empty() {
@@ -103,6 +103,6 @@ mod tests {
         let right = Box::new(Token::Number { value: 0.0 });
         let div = Token::Divide { left, right };
 
-        assert_eq!(Err("Cannot divide by zero.\nNo results.\n".to_string()), interpret(&div));
+        assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(&div));
     }
 }
