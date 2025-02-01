@@ -1,14 +1,14 @@
-use crate::ast::token::Token;
+use crate::ast::ast::ASTNode;
 
 /// Interpret a walc ast as a program.
 /// Return the result of the computation, or the errors encountered.
-pub fn interpret(ast: &Token) -> Result<f64, String> {
+pub fn interpret(ast: &ASTNode) -> Result<f64, String> {
     let mut stack: Vec<f64> = Vec::new();
     let mut errors= String::new();
 
-    let mut visit_fn = |token: &Token| {
+    let mut visit_fn = |token: &ASTNode| {
         match token {
-            Token::Add {..} | Token::Subtract {..} | Token::Multiply {..} | Token::Divide {..} => {
+            ASTNode::Add {..} | ASTNode::Subtract {..} | ASTNode::Multiply {..} | ASTNode::Divide {..} => {
                 if stack.len() < 2 {
                     errors.push_str("Insufficient operands for binary operation!\n");
                     return
@@ -19,10 +19,10 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
                 let left = stack.pop().unwrap();
 
                 match token {
-                    Token::Add {..} => stack.push(left + right),
-                    Token::Subtract {..} => stack.push(left - right),
-                    Token::Multiply {..} => stack.push(left * right),
-                    Token::Divide {..} => {
+                    ASTNode::Add {..} => stack.push(left + right),
+                    ASTNode::Subtract {..} => stack.push(left - right),
+                    ASTNode::Multiply {..} => stack.push(left * right),
+                    ASTNode::Divide {..} => {
                         if right == 0.0 {
                             errors.push_str("Cannot divide by zero.\n");
                         } else {
@@ -35,7 +35,7 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
                     }
                 }
             }
-            Token::Number { value } => { stack.push(*value) }
+            ASTNode::Number { value } => { stack.push(*value) }
         }
     };
 
@@ -53,15 +53,15 @@ pub fn interpret(ast: &Token) -> Result<f64, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::token::Token;
+    use crate::ast::ast::ASTNode;
     use crate::ast::treewalk_interpreter::interpret;
 
     #[test]
     fn test_add() {
         // 1 + -2
-        let left = Box::new(Token::Number { value: 1.0 });
-        let right = Box::new(Token::Number { value: -2.0 });
-        let add = Token::Add { left, right };
+        let left = Box::new(ASTNode::Number { value: 1.0 });
+        let right = Box::new(ASTNode::Number { value: -2.0 });
+        let add = ASTNode::Add { left, right };
 
         assert_eq!(-1.0, interpret(&add).unwrap());
     }
@@ -69,9 +69,9 @@ mod tests {
     #[test]
     fn test_subtract() {
         // 1 - 2
-        let left = Box::new(Token::Number { value: 1.0 });
-        let right = Box::new(Token::Number { value: 2.0 });
-        let subtract = Token::Subtract { left, right };
+        let left = Box::new(ASTNode::Number { value: 1.0 });
+        let right = Box::new(ASTNode::Number { value: 2.0 });
+        let subtract = ASTNode::Subtract { left, right };
 
         assert_eq!(-1.0, interpret(&subtract).unwrap());
     }
@@ -79,9 +79,9 @@ mod tests {
     #[test]
     fn test_multiply() {
         // 2 * -2
-        let left = Box::new(Token::Number { value: 2.0 });
-        let right = Box::new(Token::Number { value: -2.0 });
-        let multiply = Token::Multiply { left, right };
+        let left = Box::new(ASTNode::Number { value: 2.0 });
+        let right = Box::new(ASTNode::Number { value: -2.0 });
+        let multiply = ASTNode::Multiply { left, right };
 
         assert_eq!(-4.0, interpret(&multiply).unwrap());
     }
@@ -89,9 +89,9 @@ mod tests {
     #[test]
     fn test_divide() {
         // -2 / 4
-        let left = Box::new(Token::Number { value: -2.0 });
-        let right = Box::new(Token::Number { value: 4.0 });
-        let div = Token::Divide { left, right };
+        let left = Box::new(ASTNode::Number { value: -2.0 });
+        let right = Box::new(ASTNode::Number { value: 4.0 });
+        let div = ASTNode::Divide { left, right };
 
         assert_eq!(-0.5, interpret(&div).unwrap());
     }
@@ -99,9 +99,9 @@ mod tests {
     #[test]
     fn test_divide_zero() {
         // 2 / 0
-        let left = Box::new(Token::Number { value: 1.0 });
-        let right = Box::new(Token::Number { value: 0.0 });
-        let div = Token::Divide { left, right };
+        let left = Box::new(ASTNode::Number { value: 1.0 });
+        let right = Box::new(ASTNode::Number { value: 0.0 });
+        let div = ASTNode::Divide { left, right };
 
         assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(&div));
     }

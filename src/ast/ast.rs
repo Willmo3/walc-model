@@ -7,24 +7,24 @@ use serde::{Deserialize, Serialize};
 /// This supports serde serialization, deserialization out of the box.
 /// You specify which targets!
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub enum Token {
+pub enum ASTNode {
     Number { value: f64 },
-    Add { left: Box<Token>, right: Box<Token> },
-    Subtract { left: Box<Token>, right: Box<Token> },
-    Multiply { left: Box<Token>, right: Box<Token> },
-    Divide { left: Box<Token>, right: Box<Token> },
+    Add { left: Box<ASTNode>, right: Box<ASTNode> },
+    Subtract { left: Box<ASTNode>, right: Box<ASTNode> },
+    Multiply { left: Box<ASTNode>, right: Box<ASTNode> },
+    Divide { left: Box<ASTNode>, right: Box<ASTNode> },
 }
 
-impl Token {
+impl ASTNode {
     /// Traverse AST in postorder, calling visitor fns.
     /// Order: (left, right, center
-    pub fn postorder_traverse<Visitor: FnMut(&Token) -> ()>(&self, visit_fn: &mut Visitor) {
+    pub fn postorder_traverse<Visitor: FnMut(&ASTNode) -> ()>(&self, visit_fn: &mut Visitor) {
         match self {
             // Binary operations: two children.
-            Token::Add {left, right}
-                | Token::Subtract {left, right}
-                | Token::Multiply {left, right}
-                | Token::Divide { left, right } => {
+            ASTNode::Add {left, right}
+                | ASTNode::Subtract {left, right}
+                | ASTNode::Multiply {left, right}
+                | ASTNode::Divide { left, right } => {
                 left.postorder_traverse(visit_fn);
                 right.postorder_traverse(visit_fn);
             }

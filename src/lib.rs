@@ -8,6 +8,6 @@ pub mod bytecode {
 /// Walc AST operations, including treewalk interpreter.
 /// Author: Will Morris
 pub mod ast {
-    pub mod token;
+    pub mod ast;
     pub mod treewalk_interpreter;
 }
