@@ -41,3 +41,35 @@ In many cases, it will be ideal to write translation functions on the frontend -
 - Result of translation as a stream of bytes. Note that `bytecode_generate` performs no checking on the validity of the AST.
 
 Note that other public fields exist, which may be viewed on the `crates.io` package explorer. This documentation merely serves to explain the key interface of `walc-model`. 
+
+## Code format:
+The Walc interpreter supports both AST and Bytecode formats for execution.
+
+### Tree format:
+To bolster compatibility, Walc-model ASTs are serializable and deserializable.
+We have tested serialization under a json scheme. 
+* Binary operands should be capitalized and named after their operation. They should have `left` and `right` fields containing their subtrees.
+* Number nodes have a `value` field containing a decimal representation of the number they contain.
+
+#### Example:
+3.1 - 2: {"Subtract":{"left":{"Number":{"value": 3.1}},"right":{"Number":{"value": 2}}}}
+
+### Bytecode format:
+* Each instruction comprises a single byte.
+* Operands are all 8 bytes in size.
+
+#### Operations:
+* 0x0: push
+    * Push an 8-byte value onto the stack.
+* 0x1: add
+    * Pop two 8-byte values from the stack, add them, and push the total onto the stack.
+* 0x2: subtract
+    * Pop two 8-byte values from the stack, subtract them, and push the result onto the stack.
+* 0x3: multiply
+    * Pop two 8-byte values from the stack, multiply them, and push the result onto the stack.
+* 0x4: divide
+    * Pop two 8-byte values from the stack, divide them, and push the result onto the stack.
+
+#### Instruction structure:
+* Byte one: instruction code.
+* Bytes two-nine (optional): operand.
