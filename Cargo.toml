@@ -1,8 +1,8 @@
 [package]
 name = "walc_model"
-version = "0.3.1"
+version = "0.4.1"
 edition = "2021"
-description = "Model for toy tree-traversal calculator"
+description = "Interpreter for Walc programming language."
 license = "MIT"
 repository = "https://github.com/Willmo3/walc-model"
 

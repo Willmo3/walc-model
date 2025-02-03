@@ -73,3 +73,16 @@ We have tested serialization under a json scheme.
 #### Instruction structure:
 * Byte one: instruction code.
 * Bytes two-nine (optional): operand.
+
+## Design notes
+
+### Including Frontend
+Early in Walc's development, Walc contained only the execution backend of the interpreter. This is based on the strategy planned for the Twoville language's Rust interpreter, which would maintain a JavaScript lexer and parser to ease direct manipulation of the AST. However, as it became clear that Walc might use static analysis passes in the "middle end," this clean decoupling began to vanish. 
+
+A key aspect of separating Walc's frontend from its backend was to allow bytecode to be transferred through WebAssembly's memory, rather than a larger tree-based representation. However, many static analyses (such as typechecking) require access to the tree representation. Therefore, extending Walc required taking one of three paths:
+1. Requiring developers to run their own tree-based analyses, leaving the interpreter to perform only optimizations viable on linear bytecode. 
+2. Transporting an AST to the Walc model, leaving both the frontend and backend with independent tree representations of the program.
+3. Integrating the frontend into the core Walc interpreter.
+
+Option on devastated the extensibility of the Walc language. Option two tightly coupled the back and front end across a language boundary. Only option three remained.
+

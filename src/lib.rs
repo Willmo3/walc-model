@@ -11,3 +11,8 @@ pub mod ast {
     pub mod ast;
     pub mod treewalk_interpreter;
 }
+
+pub mod frontend {
+    pub mod lexer;
+    pub mod parser;
+}
