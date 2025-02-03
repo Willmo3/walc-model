@@ -5,7 +5,7 @@ use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
 
 /// Given an ordered collection of lexemes
 /// Build an abstract syntax tree
-pub fn parse(lexemes: Vec<Lexeme>) -> Option<ASTNode> {
+pub fn parse(lexemes: Vec<Lexeme>) -> Option<Result<ASTNode, String>> {
     // There should be at least an EOF lexeme
     assert!(lexemes.len() > 0);
     if lexemes[0] == EOF {
@@ -23,49 +23,73 @@ struct Parser {
 
 // Parse methods
 impl Parser {
-    fn parse(&mut self) -> ASTNode {
+    fn parse(&mut self) -> Result<ASTNode, String> {
         let ast = self.parse_add();
-        // Complain if error.
-        if self.index != self.lexemes.len() - 1 {
-            panic!("Expected EOF, got {:?}.\n ", self.lexemes[self.index]);
+        match ast {
+            Ok(ast) => {
+                // Complain if some of AST ignored.
+                if self.index != self.lexemes.len() - 1 {
+                    Err(format!("Expected EOF, got {:?}.\n ", self.lexemes[self.index]))
+                } else {
+                    Ok(ast)
+                }
+            }
+            Err(error) => Err(error),
         }
-        ast
     }
 
-    fn parse_add(&mut self) -> ASTNode {
+    fn parse_add(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_multiply();
 
-        while self.in_bounds() {
-            left = match self.current() {
+        while self.in_bounds() && !left.is_err()
+            && (self.current() == Plus || self.current() == Minus) {
+
+            let operation = self.current();
+            self.advance();
+
+            let right = match self.parse_multiply() {
+                Ok(ast) => { ast }
+                Err( error ) => { return Err(error); }
+            };
+
+            match operation {
                 Plus => {
-                    self.advance();
-                    Add { left: Box::new(left), right: Box::new(self.parse_multiply()) }
+                    left = Ok (Add { left: Box::new(left?), right: Box::new(right) })
                 }
                 Minus => {
-                    self.advance();
-                    Subtract { left: Box::new(left), right: Box::new(self.parse_multiply()) }
+                    left = Ok (Subtract { left: Box::new(left?), right: Box::new(right) })
                 }
-                _ => { return left }
-            };
+                _=> panic!("Internal error -- verified operation was plus or minus!")
+            }
         }
 
         left
     }
 
-    fn parse_multiply(&mut self) -> ASTNode {
+    fn parse_multiply(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_atom();
 
-        while self.in_bounds() {
-            left = match self.current() {
+        // End parsing subtree when error found on left.
+        while self.in_bounds() && !left.is_err()
+            && (self.current() == Star || self.current() == Slash) {
+
+            let operation = self.current();
+            self.advance();
+
+            // Immediately error if problem in right subtree.
+            let right = match self.parse_atom() {
+                Ok(ast) => { ast }
+                Err(error ) => { return Err(error) }
+            };
+
+            match operation {
                 Star => {
-                    self.advance();
-                    Multiply { left: Box::new(left), right: Box::new(self.parse_atom()) }
+                    left = Ok ( Multiply { left: Box::new(left?), right: Box::new(right) } )
                 }
                 Slash => {
-                    self.advance();
-                    Divide { left: Box::new(left), right: Box::new(self.parse_atom()) }
+                    left = Ok ( Divide { left: Box::new(left?), right: Box::new(right) } )
                 }
-                _ => { return left }
+                _ => panic!("Internal error -- verified earlier it was plus or minus!" )
             }
         }
 
@@ -75,17 +99,18 @@ impl Parser {
     // parse atom:
     // either a parenthesized expression (EXPR)
     // Or a simple number
-    fn parse_atom(&mut self) -> ASTNode {
+    fn parse_atom(&mut self) -> Result<ASTNode, String> {
         match self.current() {
             OpenParen => {
                 self.advance();
                 // Note: calling root parse WILL fail due to bounds checks.
                 let value = self.parse_add();
                 if !self.has(CloseParen) {
-                    panic!("Unterminated parentheses!")
+                    Err("Unterminated parentheses!".to_string())
+                } else {
+                    self.advance();
+                    value
                 }
-                self.advance();
-                value
             }
             _ => {
                 self.parse_number()
@@ -93,12 +118,12 @@ impl Parser {
         }
     }
 
-    fn parse_number(&mut self) -> ASTNode {
+    fn parse_number(&mut self) -> Result<ASTNode, String> {
         match self.next() {
             Lexeme::Number { value } => {
-                ASTNode::Number { value }
+                Ok(ASTNode::Number { value })
             }
-            _ => { panic!("Expected a number, but none was found!"); }
+            _ => { Err("Expected a number, but none was found!".to_string()) }
         }
     }
 }
@@ -153,19 +178,18 @@ mod tests {
         let neg_two = Number { value: -2.0 };
         let divide = Divide { left: Box::new(times), right: Box::new(neg_two) };
 
-        assert_eq!(divide, parse(lexemes).unwrap());
+        assert_eq!(Ok(divide), parse(lexemes.unwrap()).unwrap());
     }
 
     #[test]
     fn test_empty() {
         let input = "";
-        assert_eq!(None, parse(lex(input)))
+        assert_eq!(None, parse(lex(input).unwrap()));
     }
 
     #[test]
-    #[should_panic]
     fn test_invalid_lexeme() {
         let input = "3+";
-        parse(lex(input));
+        assert_eq!(Some(Err("Expected a number, but none was found!".to_string())), parse(lex(input).unwrap()));
     }
 }

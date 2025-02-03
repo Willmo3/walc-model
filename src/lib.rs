@@ -25,10 +25,10 @@ mod frontend {
 /// Interface for Walc language. Takes a source program and returns the result of the computation,
 /// Or an error.
 pub fn interpret(source_code: &str) -> Result<f64, String> {
-    let tokens = lexer::lex(source_code);
+    let tokens = lexer::lex(source_code)?;
     // Note: why does the parser consume the tokens? Look into changing.
     let ast = parser::parse(tokens).unwrap();
-    let bytecode = bytecode_generator::generate(&ast);
+    let bytecode = bytecode_generator::generate(&ast?);
     bytecode::bytecode_interpreter::interpret(&bytecode)
 }
 
