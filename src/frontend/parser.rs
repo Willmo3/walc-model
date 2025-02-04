@@ -41,36 +41,57 @@ impl Parser {
     fn parse_add(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_multiply();
 
-        while self.in_bounds() && !left.is_err()
+        // If left is an error message, prime our error reporting with its data
+        let mut err_message = if let Err(message) = &left {
+            message.clone()
+        } else {
+            String::new()
+        };
+
+        // Even if already errored, we will continue attempting to parse to gain more errors.
+        while self.in_bounds()
             && (self.current() == Plus || self.current() == Minus) {
 
             let operation = self.current();
             self.advance();
 
             let right = match self.parse_multiply() {
-                Ok(ast) => { ast }
-                Err( error ) => { return Err(error); }
+                Ok( ast) => { Ok(ast) }
+                Err( error ) => { err_message.push_str(&error); Err(error) }
             };
 
-            match operation {
-                Plus => {
-                    left = Ok (Add { left: Box::new(left?), right: Box::new(right) })
+            if !left.is_err() && !right.is_err() {
+                match operation {
+                    Plus => {
+                        left = Ok (Add { left: Box::new(left?), right: Box::new(right?) })
+                    }
+                    Minus => {
+                        left = Ok (Subtract { left: Box::new(left?), right: Box::new(right?) })
+                    }
+                    _=> panic!("Internal error -- verified operation was plus or minus!")
                 }
-                Minus => {
-                    left = Ok (Subtract { left: Box::new(left?), right: Box::new(right) })
-                }
-                _=> panic!("Internal error -- verified operation was plus or minus!")
             }
         }
 
-        left
+        if !err_message.is_empty() {
+            Err(err_message)
+        } else {
+            Ok(left?)
+        }
     }
 
     fn parse_multiply(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_atom();
 
-        // End parsing subtree when error found on left.
-        while self.in_bounds() && !left.is_err()
+        // If left is an error message, prime our error reporting with its data
+        let mut err_message = if let Err(message) = &left {
+            message.clone()
+        } else {
+            String::new()
+        };
+
+        // Even if error found, will attempt to continue parsing to gain more errors
+        while self.in_bounds()
             && (self.current() == Star || self.current() == Slash) {
 
             let operation = self.current();
@@ -78,22 +99,28 @@ impl Parser {
 
             // Immediately error if problem in right subtree.
             let right = match self.parse_atom() {
-                Ok(ast) => { ast }
-                Err(error ) => { return Err(error) }
+                Ok(ast) => { Ok(ast) }
+                Err(error ) => { err_message.push_str(&error); Err(error) }
             };
 
-            match operation {
-                Star => {
-                    left = Ok ( Multiply { left: Box::new(left?), right: Box::new(right) } )
+            if !left.is_err() && !right.is_err() {
+                match operation {
+                    Star => {
+                        left = Ok ( Multiply { left: Box::new(left?), right: Box::new(right?) } )
+                    }
+                    Slash => {
+                        left = Ok ( Divide { left: Box::new(left?), right: Box::new(right?) } )
+                    }
+                    _ => panic!("Internal error -- verified earlier it was plus or minus!" )
                 }
-                Slash => {
-                    left = Ok ( Divide { left: Box::new(left?), right: Box::new(right) } )
-                }
-                _ => panic!("Internal error -- verified earlier it was plus or minus!" )
             }
         }
 
-        left
+        if !err_message.is_empty() {
+            Err(err_message)
+        } else {
+            Ok(left?)
+        }
     }
 
     // parse atom:
@@ -106,7 +133,7 @@ impl Parser {
                 // Note: calling root parse WILL fail due to bounds checks.
                 let value = self.parse_add();
                 if !self.has(CloseParen) {
-                    Err("Unterminated parentheses!".to_string())
+                    Err("Unterminated parentheses!\n".to_string())
                 } else {
                     self.advance();
                     value
@@ -119,11 +146,13 @@ impl Parser {
     }
 
     fn parse_number(&mut self) -> Result<ASTNode, String> {
-        match self.next() {
+        // Only consume input if a valid number found!
+        match self.current() {
             Lexeme::Number { value } => {
+                self.advance();
                 Ok(ASTNode::Number { value })
             }
-            _ => { Err("Expected a number, but none was found!".to_string()) }
+            _ => { Err("Expected a number, but none was found!\n".to_string()) }
         }
     }
 }
@@ -139,15 +168,7 @@ impl Parser {
         self.in_bounds() && self.lexemes[self.index] == l
     }
 
-    // Advance to the next character.
-    // Return the character that was previously under the cursor
-    fn next(&mut self) -> Lexeme {
-        assert!(self.in_bounds());
-        let ret_val = self.current();
-        self.index += 1;
-        ret_val
-    }
-
+    // Advance to the next lexeme
     fn advance(&mut self) {
         self.index += 1;
     }
@@ -190,6 +211,12 @@ mod tests {
     #[test]
     fn test_invalid_lexeme() {
         let input = "3+";
-        assert_eq!(Some(Err("Expected a number, but none was found!".to_string())), parse(lex(input).unwrap()));
+        assert_eq!(Some(Err("Expected a number, but none was found!\n".to_string())), parse(lex(input).unwrap()));
+    }
+
+    #[test]
+    fn test_multiple_errors() {
+        let input = "3 * +";
+        assert_eq!(Some(Err("Expected a number, but none was found!\nExpected a number, but none was found!\n".to_string())), parse(lex(input).unwrap()));
     }
 }
