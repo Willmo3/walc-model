@@ -40,12 +40,11 @@ impl Lexer {
     // Lex all tokens in self's data
     fn lex(&mut self) {
         let mut lexeme_result = self.lex_next();
-        let mut errors = String::new();
 
         while lexeme_result != Ok(EOF) {
             match &lexeme_result {
                 Ok(lexeme) => { self.lexemes.push(*lexeme); },
-                Err(message) => { errors.push_str(message); }
+                Err(message) => { self.errors.push_str(message); }
             }
             lexeme_result = self.lex_next()
         }
@@ -172,5 +171,11 @@ mod tests {
     fn test_empty() {
         let input = "";
         assert_eq!(Ok(vec![EOF]), lex(input));
+    }
+
+    #[test]
+    fn test_multiple_errors() {
+        let input = "3. + 5.";
+        assert_eq!(Err("Unterminated float.\nUnterminated float.\n".to_string()), lex(input));
     }
 }
