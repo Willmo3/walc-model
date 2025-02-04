@@ -134,7 +134,7 @@ impl Parser {
                 // Note: calling root parse WILL fail due to bounds checks.
                 let value = self.parse_add();
                 if !(self.current().lexeme_type == CloseParen) {
-                    Err("Unterminated parentheses!\n".to_string())
+                    Err(format!("Expected ')' on line {}, got {} instead.\n", self.current().line, self.current().text ))
                 } else {
                     self.advance();
                     value
@@ -154,7 +154,8 @@ impl Parser {
                 self.advance();
                 value
             }
-            _ => { Err("Expected a number, but none was found!\n".to_string()) }
+            _ => Err(format!("Expected number on line {}, got {} instead.\n",
+                            self.current().line, self.current().text))
         }
     }
 }
@@ -208,12 +209,12 @@ mod tests {
     #[test]
     fn test_invalid_lexeme() {
         let input = "3+";
-        assert_eq!(Some(Err("Expected a number, but none was found!\n".to_string())), parse(lex(input).unwrap()));
+        assert_eq!(Some(Err("Expected number on line 1, got end of file instead.\n".to_string())), parse(lex(input).unwrap()));
     }
 
     #[test]
     fn test_multiple_errors() {
         let input = "3 * +";
-        assert_eq!(Some(Err("Expected a number, but none was found!\nExpected a number, but none was found!\n".to_string())), parse(lex(input).unwrap()));
+        assert_eq!(Some(Err("Expected number on line 1, got + instead.\nExpected number on line 1, got end of file instead.\n".to_string())), parse(lex(input).unwrap()));
     }
 }

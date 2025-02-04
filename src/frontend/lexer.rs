@@ -1,4 +1,5 @@
 use crate::frontend::lexer::LexemeType::{CloseParen, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use std::fmt::Display;
 
 /// Given a string "data" containing the source code.
 /// Return a list of lexemes associated with that source
@@ -32,9 +33,10 @@ pub enum LexemeType {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Lexeme {
     pub(crate) lexeme_type: LexemeType,
-    line: usize,
+    pub(crate) line: usize,
     pub(crate) text: String,
 }
+
 impl Lexeme {
     pub fn new(lexeme_type: LexemeType, line: usize, text: String) -> Lexeme {
         Lexeme { lexeme_type, line, text }
@@ -82,7 +84,7 @@ impl Lexer {
         }
         // If after skipping whitespaces, out of bounds, return EOF .
         if !self.in_bounds() {
-            return Ok(Lexeme::new(EOF, self.line, String::new()));
+            return Ok(Lexeme::new(EOF, self.line, String::from("end of file")));
         }
         // Otherwise, another non-whitespace character remains to be lexed.
         let start = self.next();
@@ -189,7 +191,7 @@ mod tests {
             Lexeme::new(Numeric, 2, String::from("3")),
             Lexeme::new(Slash, 2, String::from("/")),
             Lexeme::new(Numeric, 2, String::from("-2")),
-            Lexeme::new(EOF, 2, String::new())
+            Lexeme::new(EOF, 2, String::from("end of file")),
                             ];
         let tokens = lex(input);
         assert_eq!(Ok(expected), tokens);
@@ -198,7 +200,7 @@ mod tests {
     #[test]
     fn test_empty() {
         let input = "";
-        assert_eq!(Ok(vec![Lexeme::new(EOF, 1, String::new())]), lex(input));
+        assert_eq!(Ok(vec![Lexeme::new(EOF, 1, String::from("end of file"))]), lex(input));
     }
 
     #[test]
