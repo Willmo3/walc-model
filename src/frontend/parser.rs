@@ -1,14 +1,15 @@
+use std::str::FromStr;
 use crate::frontend::lexer::Lexeme;
-use crate::frontend::lexer::Lexeme::{CloseParen, EOF, Minus, OpenParen, Plus, Slash, Star};
 use crate::ast::ast::ASTNode;
 use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
+use crate::frontend::lexer::LexemeType::{CloseParen, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given an ordered collection of lexemes
 /// Build an abstract syntax tree
 pub fn parse(lexemes: Vec<Lexeme>) -> Option<Result<ASTNode, String>> {
     // There should be at least an EOF lexeme
     assert!(lexemes.len() > 0);
-    if lexemes[0] == EOF {
+    if lexemes[0].lexeme_type == EOF {
         None
     } else {
         Some(Parser { index: 0, lexemes }.parse())
@@ -50,9 +51,9 @@ impl Parser {
 
         // Even if already errored, we will continue attempting to parse to gain more errors.
         while self.in_bounds()
-            && (self.current() == Plus || self.current() == Minus) {
+            && (self.current().lexeme_type == Plus || self.current().lexeme_type == Minus) {
 
-            let operation = self.current();
+            let operation = self.current().lexeme_type;
             self.advance();
 
             let right = match self.parse_multiply() {
@@ -92,9 +93,9 @@ impl Parser {
 
         // Even if error found, will attempt to continue parsing to gain more errors
         while self.in_bounds()
-            && (self.current() == Star || self.current() == Slash) {
+            && (self.current().lexeme_type == Star || self.current().lexeme_type == Slash) {
 
-            let operation = self.current();
+            let operation = self.current().lexeme_type;
             self.advance();
 
             // Immediately error if problem in right subtree.
@@ -127,12 +128,12 @@ impl Parser {
     // either a parenthesized expression (EXPR)
     // Or a simple number
     fn parse_atom(&mut self) -> Result<ASTNode, String> {
-        match self.current() {
+        match self.current().lexeme_type {
             OpenParen => {
                 self.advance();
                 // Note: calling root parse WILL fail due to bounds checks.
                 let value = self.parse_add();
-                if !self.has(CloseParen) {
+                if !(self.current().lexeme_type == CloseParen) {
                     Err("Unterminated parentheses!\n".to_string())
                 } else {
                     self.advance();
@@ -147,10 +148,11 @@ impl Parser {
 
     fn parse_number(&mut self) -> Result<ASTNode, String> {
         // Only consume input if a valid number found!
-        match self.current() {
-            Lexeme::Number { value } => {
+        match self.current().lexeme_type {
+            Numeric => {
+                let value = Ok(ASTNode::Number { value: f64::from_str(&self.current().text).unwrap() });
                 self.advance();
-                Ok(ASTNode::Number { value })
+                value
             }
             _ => { Err("Expected a number, but none was found!\n".to_string()) }
         }
@@ -163,20 +165,15 @@ impl Parser {
         self.index < self.lexemes.len()
     }
 
-    // Return whether the cursor has an element of the specified type
-    fn has(&self, l: Lexeme) -> bool {
-        self.in_bounds() && self.lexemes[self.index] == l
-    }
-
     // Advance to the next lexeme
     fn advance(&mut self) {
         self.index += 1;
     }
 
     // Get the current lexeme
-    fn current(&self) -> Lexeme {
+    fn current(&self) -> &Lexeme {
         assert!(self.in_bounds());
-        self.lexemes[self.index]
+        &self.lexemes[self.index]
     }
 }
 
