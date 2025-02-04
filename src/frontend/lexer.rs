@@ -87,36 +87,24 @@ impl Lexer {
         // Otherwise, another non-whitespace character remains to be lexed.
         let start = self.next();
         match start {
-            '(' => {
-                Ok(Lexeme::new(OpenParen, self.line, String::from("(")))
-            }
-            ')' => {
-                Ok(Lexeme::new(CloseParen, self.line, String::from(")")))
-            }
-            '*' => {
-                Ok(Lexeme::new(Star, self.line, String::from("*")))
-            }
-            '/' => {
-                Ok(Lexeme::new(Slash, self.line, String::from("/")))
-            }
-            '+' => {
-                Ok(Lexeme::new(Plus, self.line, String::from("+")))
-            }
+            '(' => Ok(Lexeme::new(OpenParen, self.line, String::from("("))),
+            ')' => Ok(Lexeme::new(CloseParen, self.line, String::from(")"))),
+            '*' => Ok(Lexeme::new(Star, self.line, String::from("*"))),
+            '/' => Ok(Lexeme::new(Slash, self.line, String::from("/"))),
+            '+' => Ok(Lexeme::new(Plus, self.line, String::from("+"))),
             // trouble: minus can be the start of a negative number.
-            '-' => {
+            '-' =>
                 if self.in_bounds() && self.current().is_ascii_digit() {
                     self.lex_number(start)
                 } else {
                     Ok( Lexeme::new (Minus, self.line, String::from("-")) )
                 }
-            }
-            _ => {
+            _ =>
                 if start.is_ascii_digit() {
                     self.lex_number(start)
                 } else {
                     Err(format!("Unexpected character: '{}'.\n", self.current()))
                 }
-            }
         }
     }
 }
