@@ -24,20 +24,20 @@ mod frontend {
 
 /// Interface for Walc language. Takes a source program and returns the result of the computation,
 /// Or an error.
-pub fn interpret(source_code: &str) -> String {
+pub fn interpret(source_code: &str) -> Result<String, String> {
     let tokens = match lexer::lex(source_code) {
         Ok(tokens) => tokens,
-        Err(lex_error) => return String::from(lex_error),
+        Err(lex_error) => return Err(String::from(lex_error)),
     };
     let ast = match parser::parse(tokens) {
         Some(Ok(ast)) => ast,
-        Some(Err(parse_error)) => return String::from(parse_error),
-        None => return String::from(""),
+        Some(Err(parse_error)) => return Err(String::from(parse_error)),
+        None => return Err(String::from("")),
     };
     let bytecode = bytecode_generator::generate(&ast);
     match bytecode::bytecode_interpreter::interpret(&bytecode) {
-        Ok(value) => format!("{}", value),
-        Err(runtime_error) => String::from(runtime_error)
+        Ok(value) => Ok(format!("{}", value)),
+        Err(runtime_error) => Err(String::from(runtime_error))
     }
 }
 
@@ -48,12 +48,12 @@ mod tests {
     #[test]
     fn test_interpret_div() {
         let source = "(3 + 5 + 2 - 2) * 2 / 8";
-        assert_eq!("2".to_string(), interpret(source));
+        assert_eq!(Ok("2".to_string()), interpret(source));
     }
 
     #[test]
     fn test_div_zero() {
         let source = "1 / 0";
-        assert_eq!("Cannot divide by zero.\nNo result.\n".to_string(), interpret(source));
+        assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(source));
     }
 }
