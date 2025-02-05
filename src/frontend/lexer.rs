@@ -1,5 +1,4 @@
 use crate::frontend::lexer::LexemeType::{CloseParen, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
-use std::fmt::Display;
 
 /// Given a string "data" containing the source code.
 /// Return a list of lexemes associated with that source
