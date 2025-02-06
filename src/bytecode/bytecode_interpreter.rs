@@ -1,4 +1,4 @@
-use crate::bytecode::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::bytecode_interpreter::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
 
 // Operation API
 
@@ -9,6 +9,7 @@ pub enum Opcode {
     SUBTRACT,
     MULTIPLY,
     DIVIDE,
+    EXP,
 }
 
 // Opcode to byte translation
@@ -21,6 +22,7 @@ impl Opcode {
             SUBTRACT => 2,
             MULTIPLY => 3,
             DIVIDE => 4,
+            EXP => 5,
         }
     }
 
@@ -33,6 +35,7 @@ impl Opcode {
             2 => SUBTRACT,
             3 => MULTIPLY,
             4 => DIVIDE,
+            5 => EXP,
             _ => panic!("Unknown opcode {}", byte),
         }
     }
@@ -58,7 +61,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
                 stack.push(f64::from_le_bytes(immediate_bytes));
                 index += 8; // Read 8-bytes from bytecode value.
             },
-            ADD | SUBTRACT | MULTIPLY | DIVIDE => {
+            ADD | SUBTRACT | MULTIPLY | DIVIDE | EXP => {
                 index += 1; // Skip opcode
 
                 if stack.len() < 2 {
@@ -81,6 +84,7 @@ pub fn interpret(bytes: &Vec<u8>) -> Result<f64, String> {
                         }
                         stack.push(left / right)
                     },
+                    EXP => stack.push(left.powf(right)),
                     _ => errors.push_str(&format!("Unknown binary operation: {}\n", operation)),
                 }
             }
@@ -171,5 +175,18 @@ mod tests {
         code.push(4u8);
 
         assert_eq!(interpret(&code), Err("Cannot divide by zero.\nNo result.\n".to_string()));
+    }
+
+    #[test]
+    fn test_pow() {
+        // 2 ** 2
+        let mut code = Vec::new();
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(5u8);
+
+        assert_eq!(interpret(&code).unwrap(), 4.0);
     }
 }
