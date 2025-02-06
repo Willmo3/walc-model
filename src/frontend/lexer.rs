@@ -1,4 +1,4 @@
-use crate::frontend::lexer::LexemeType::{CloseParen, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given a string "data" containing the source code.
 /// Return a list of lexemes associated with that source
@@ -24,6 +24,7 @@ pub enum LexemeType {
     Plus,
     Minus,
     Star,
+    DoubleStar,
     Slash ,
     // Special token that all files are terminated by
     EOF,
@@ -90,7 +91,13 @@ impl Lexer {
         match start {
             '(' => Ok(Lexeme::new(OpenParen, self.line, String::from("("))),
             ')' => Ok(Lexeme::new(CloseParen, self.line, String::from(")"))),
-            '*' => Ok(Lexeme::new(Star, self.line, String::from("*"))),
+            '*' =>
+                if self.in_bounds() && self.current() == '*' {
+                    self.skip();
+                    Ok(Lexeme::new(DoubleStar, self.line, String::from("**")))
+                } else {
+                    Ok(Lexeme::new(Star, self.line, String::from("*")))
+                }
             '/' => Ok(Lexeme::new(Slash, self.line, String::from("/"))),
             '+' => Ok(Lexeme::new(Plus, self.line, String::from("+"))),
             // trouble: minus can be the start of a negative number.
@@ -175,7 +182,7 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use crate::frontend::lexer::{lex, Lexeme};
-    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF};
+    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar};
 
     #[test]
     fn test_lex() {
@@ -206,5 +213,14 @@ mod tests {
     fn test_multiple_errors() {
         let input = "3. + 5.";
         assert_eq!(Err("Unterminated float.\nUnterminated float.\n".to_string()), lex(input));
+    }
+
+    #[test]
+    fn test_exp() {
+        let input = "**";
+        assert_eq!(Ok(vec![
+            Lexeme::new(DoubleStar, 1, String::from("**")),
+            Lexeme::new(EOF, 1, String::from("end of file"))
+        ]), lex(input));
     }
 }
