@@ -44,8 +44,8 @@ Note that other public fields exist, which may be viewed on the `crates.io` pack
 
 ## Grammar:
 start = add
-add = [add (PLUS | MINUS)] mult
-mult = [mult (STAR | SLASH)] exp
+add = mult ((PLUS | MINUS) mult)*
+mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
 atom = LEFT_PARENS start RIGHT_PARENS
      | NUMBER_LITERAL
