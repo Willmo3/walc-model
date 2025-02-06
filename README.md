@@ -42,6 +42,13 @@ In many cases, it will be ideal to write translation functions on the frontend -
 
 Note that other public fields exist, which may be viewed on the `crates.io` package explorer. This documentation merely serves to explain the key interface of `walc-model`. 
 
+## Grammar:
+start = add
+add = mult ((PLUS | MINUS) mult)*
+mult = atom ((STAR | FORWARD_SLASH) atom)*
+atom = LEFT_PARENS start RIGHT_PARENS
+     | NUMBER_LITERAL
+
 ## Code format:
 The Walc interpreter supports both AST and Bytecode formats for execution.
 
