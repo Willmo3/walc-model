@@ -189,4 +189,21 @@ mod tests {
 
         assert_eq!(interpret(&code).unwrap(), 4.0);
     }
+
+    #[test]
+    fn test_double_exp() {
+        // 2 ** 3 ** 2
+        let mut code = Vec::new();
+
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(3.0));
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(5u8); // 3 ** 2
+        code.push(5u8);
+
+        assert_eq!(interpret(&code).unwrap(), 512.0);
+    }
 }
