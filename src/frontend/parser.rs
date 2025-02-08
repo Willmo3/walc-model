@@ -148,7 +148,7 @@ impl Parser {
 
             // Return error if message empty.
             if !root_expression.is_err() && !right.is_err() {
-                root_expression = Ok(ASTNode::Exponentiate { base: Box::new(root_expression?), exponent: Box::new(right?) })
+                root_expression = Ok(ASTNode::Exponentiate { left: Box::new(root_expression?), right: Box::new(right?) })
             } else {
                 root_expression = Err(err_message)
             }
@@ -266,8 +266,8 @@ mod tests {
         let two = Number { value: 2.0 };
         let one  = Number { value: 1.0 };
 
-        let right_exp = Exponentiate { base: Box::new(two), exponent: Box::new(one) };
-        let left_exp = Exponentiate { base: Box::new(three), exponent: Box::new(right_exp) };
+        let right_exp = Exponentiate { left: Box::new(two), right: Box::new(one) };
+        let left_exp = Exponentiate { left: Box::new(three), right: Box::new(right_exp) };
 
         assert_eq!(left_exp, parse(lex(input).unwrap()).unwrap().unwrap());
     }

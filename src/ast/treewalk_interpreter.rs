@@ -1,4 +1,5 @@
 use crate::ast::ast::ASTNode;
+use crate::bytecode::bytecode_interpreter::Opcode::EXP;
 
 /// Interpret a walc ast as a program.
 /// Return the result of the computation, or the errors encountered.
@@ -30,6 +31,7 @@ pub fn interpret(ast: &ASTNode) -> Result<f64, String> {
                             stack.push(left / right)
                         }
                     },
+                    ASTNode::Exponentiate { .. } => stack.push(left.powf(right)),
                     _ => {
                         errors.push_str("Internal error: invalid token.\n");
                         return
@@ -105,5 +107,18 @@ mod tests {
         let div = ASTNode::Divide { left, right };
 
         assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(&div));
+    }
+
+    #[test]
+    fn test_double_exponentiate() {
+        // 2 ** 3 ** 2
+        let two = Box::new(ASTNode::Number { value: 2.0 });
+        let three = Box::new(ASTNode::Number { value: 3.0 });
+        let two_two = Box::new(ASTNode::Number { value: 2.0 });
+
+        let three_to_two = Box::new(ASTNode::Exponentiate { left: three, right: two_two } );
+        let final_ast = Box::new(ASTNode::Exponentiate { left: two, right: three_to_two });
+
+        assert_eq!(Ok(512.0), interpret(&final_ast));
     }
 }
