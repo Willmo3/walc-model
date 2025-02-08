@@ -8,7 +8,8 @@ pub fn interpret(ast: &ASTNode) -> Result<f64, String> {
 
     let mut visit_fn = |token: &ASTNode| {
         match token {
-            ASTNode::Add {..} | ASTNode::Subtract {..} | ASTNode::Multiply {..} | ASTNode::Divide {..} => {
+            ASTNode::Add {..} | ASTNode::Subtract {..} | ASTNode::Multiply {..} | ASTNode::Divide {..}
+                | ASTNode::Exponentiate {..} => {
                 if stack.len() < 2 {
                     errors.push_str("Insufficient operands for binary operation!\n");
                     return

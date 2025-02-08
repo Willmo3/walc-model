@@ -2,7 +2,7 @@ use std::str::FromStr;
 use crate::frontend::lexer::Lexeme;
 use crate::ast::ast::ASTNode;
 use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
-use crate::frontend::lexer::LexemeType::{CloseParen, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given an ordered collection of lexemes
 /// Build an abstract syntax tree
@@ -82,7 +82,7 @@ impl Parser {
     }
 
     fn parse_multiply(&mut self) -> Result<ASTNode, String> {
-        let mut left = self.parse_atom();
+        let mut left = self.parse_exponentiation();
 
         // If left is an error message, prime our error reporting with its data
         let mut err_message = if let Err(message) = &left {
@@ -122,6 +122,40 @@ impl Parser {
         } else {
             Ok(left?)
         }
+    }
+
+    fn parse_exponentiation(&mut self) -> Result<ASTNode, String> {
+        // Root of right associative exponentiation ast.
+        let mut root_expression = self.parse_atom();
+
+        let mut err_message = if let Err(message) = &root_expression {
+            message.clone()
+        } else {
+            String::new()
+        };
+
+        // If the next lexeme in the stream is a double star (exponentiation), recurse!
+        // Right associativity makes recursive implementation more efficient.
+        if self.in_bounds() && self.current().lexeme_type == DoubleStar {
+            // Skip doublestar literal.
+            self.advance();
+
+            // Recurse on right subtree to implement right associativity.
+            let right = match self.parse_exponentiation() {
+                Ok(ast) => { Ok(ast) }
+                Err(error ) => { err_message.push_str(&error); Err(error) }
+            };
+
+            // Return error if message empty.
+            if !root_expression.is_err() && !right.is_err() {
+                root_expression = Ok(ASTNode::Exponentiate { base: Box::new(root_expression?), exponent: Box::new(right?) })
+            } else {
+                root_expression = Err(err_message)
+            }
+        }
+        // Base case: no doublestar on horizon.
+        // Since all Walc expressions must end with a number, recurse here.
+        root_expression
     }
 
     // parse atom:
@@ -166,21 +200,27 @@ impl Parser {
         self.index < self.lexemes.len()
     }
 
-    // Advance to the next lexeme
     fn advance(&mut self) {
         self.index += 1;
     }
 
-    // Get the current lexeme
     fn current(&self) -> &Lexeme {
         assert!(self.in_bounds());
         &self.lexemes[self.index]
+    }
+
+    fn peek(&self) -> Option<&Lexeme> {
+        if self.index + 1 < self.lexemes.len() {
+            Some(&self.lexemes[self.index + 1])
+        } else {
+            None
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Number};
+    use crate::ast::ast::ASTNode::{Add, Divide, Exponentiate, Multiply, Number};
     use crate::frontend::lexer::lex;
     use crate::frontend::parser::parse;
 
@@ -216,5 +256,19 @@ mod tests {
     fn test_multiple_errors() {
         let input = "3 * +";
         assert_eq!(Some(Err("Expected number on line 1, got + instead.\nExpected number on line 1, got end of file instead.\n".to_string())), parse(lex(input).unwrap()));
+    }
+
+    #[test]
+    fn test_triple_exponentiation() {
+        let input = "3 ** 2 ** 1";
+
+        let three = Number { value: 3.0 };
+        let two = Number { value: 2.0 };
+        let one  = Number { value: 1.0 };
+
+        let right_exp = Exponentiate { base: Box::new(two), exponent: Box::new(one) };
+        let left_exp = Exponentiate { base: Box::new(three), exponent: Box::new(right_exp) };
+
+        assert_eq!(left_exp, parse(lex(input).unwrap()).unwrap().unwrap());
     }
 }

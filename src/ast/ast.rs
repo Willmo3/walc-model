@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum ASTNode {
     Number { value: f64 },
+    Exponentiate { base: Box<ASTNode>, exponent: Box<ASTNode> },
     Add { left: Box<ASTNode>, right: Box<ASTNode> },
     Subtract { left: Box<ASTNode>, right: Box<ASTNode> },
     Multiply { left: Box<ASTNode>, right: Box<ASTNode> },
