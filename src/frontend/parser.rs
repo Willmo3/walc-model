@@ -154,7 +154,7 @@ impl Parser {
             }
         }
         // Base case: no doublestar on horizon.
-        // Since all Walc expressions must end with a number, recurse here.
+        // Since all Walc expressions must end with a number, descend here.
         root_expression
     }
 

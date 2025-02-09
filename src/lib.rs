@@ -56,4 +56,10 @@ mod tests {
         let source = "1 / 0";
         assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(source));
     }
+
+    #[test]
+    fn test_double_exponentiate() {
+        let source = "2**3**2";
+        assert_eq!(Ok("512".to_string()), interpret(source));
+    }
 }
