@@ -1,5 +1,4 @@
 use crate::ast::ast::ASTNode;
-use crate::bytecode::bytecode_interpreter::Opcode::EXP;
 
 /// Interpret a walc ast as a program.
 /// Return the result of the computation, or the errors encountered.

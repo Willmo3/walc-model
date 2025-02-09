@@ -208,14 +208,6 @@ impl Parser {
         assert!(self.in_bounds());
         &self.lexemes[self.index]
     }
-
-    fn peek(&self) -> Option<&Lexeme> {
-        if self.index + 1 < self.lexemes.len() {
-            Some(&self.lexemes[self.index + 1])
-        } else {
-            None
-        }
-    }
 }
 
 #[cfg(test)]
