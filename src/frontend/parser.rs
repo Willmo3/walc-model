@@ -99,7 +99,7 @@ impl Parser {
             self.advance();
 
             // Immediately error if problem in right subtree.
-            let right = match self.parse_atom() {
+            let right = match self.parse_exponentiation() {
                 Ok(ast) => { Ok(ast) }
                 Err(error ) => { err_message.push_str(&error); Err(error) }
             };
@@ -262,5 +262,13 @@ mod tests {
         let left_exp = Exponentiate { left: Box::new(three), right: Box::new(right_exp) };
 
         assert_eq!(left_exp, parse(lex(input).unwrap()).unwrap().unwrap());
+    }
+
+    #[test]
+    fn test_multiply_exponentiation() {
+        let input = "3 * 2 ** 1";
+        let lexemes = lex(input).unwrap();
+
+        parse(lexemes).unwrap().expect("Unexpected parse error");
     }
 }
