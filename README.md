@@ -76,7 +76,9 @@ We have tested serialization under a json scheme.
 * 0x3: multiply
     * Pop two 8-byte values from the stack, multiply them, and push the result onto the stack.
 * 0x4: divide
-    * Pop two 8-byte values from the stack, divide them, and push the result onto the stack.
+    * Pop two 8-byte values from the stack, divide the second one by the first, and push the result onto the stack.
+* 0x5: exponentiate
+    * Pop two 8-byte values from the stack, raise the second one to the first one's power, and push the result onto the stack.
 
 #### Instruction structure:
 * Byte one: instruction code.
