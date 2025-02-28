@@ -14,7 +14,6 @@ mod bytecode {
 /// Author: Will Morris
 mod ast {
     pub mod ast;
-    pub mod treewalk_interpreter;
 }
 
 /// Frontend for the Walc interpreter.

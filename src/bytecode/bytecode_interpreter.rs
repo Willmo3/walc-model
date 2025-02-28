@@ -15,7 +15,7 @@ struct InterpreterState<'a> {
 pub fn execute(bytes: &Vec<u8>) -> Result<f64, String> {
     let mut state = InterpreterState { code: bytes, index: 0, errors: String::new() };
     let mut root_frame = StackFrame::new();
-    
+
     match interpret_frame(&mut state, &mut root_frame) {
         true => Ok(root_frame.pop_value().unwrap()),
         false => Err(state.errors),
