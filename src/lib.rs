@@ -7,6 +7,7 @@ mod bytecode {
     pub mod bytecode_interpreter;
     pub mod bytecode_generator;
     mod opcode;
+    mod stackframe;
 }
 
 /// Walc AST operations, including treewalk interpreter.
@@ -36,7 +37,7 @@ pub fn interpret(source_code: &str) -> Result<String, String> {
         None => return Err(String::from("")),
     };
     let bytecode = bytecode_generator::generate(&ast);
-    match bytecode::bytecode_interpreter::interpret(&bytecode) {
+    match bytecode::bytecode_interpreter::execute(&bytecode) {
         Ok(value) => Ok(format!("{}", value)),
         Err(runtime_error) => Err(String::from(runtime_error))
     }

@@ -35,7 +35,7 @@ pub fn generate(ast: &ASTNode) -> Vec<u8> {
 mod tests {
     use crate::ast::ast::ASTNode;
     use crate::bytecode::bytecode_generator::generate;
-    use crate::bytecode::bytecode_interpreter::interpret;
+    use crate::bytecode::bytecode_interpreter::execute;
 
     #[test]
     fn test_add() {
@@ -45,7 +45,7 @@ mod tests {
         let add = ASTNode::Add { left, right };
 
         let bytecode = generate(&add);
-        assert_eq!(-1.0, interpret(&bytecode).unwrap());
+        assert_eq!(-1.0, execute(&bytecode).unwrap());
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod tests {
         let subtract = ASTNode::Subtract { left, right };
 
         let bytecode = generate(&subtract);
-        assert_eq!(-1.0, interpret(&bytecode).unwrap());
+        assert_eq!(-1.0, execute(&bytecode).unwrap());
     }
 
     #[test]
@@ -67,7 +67,7 @@ mod tests {
         let multiply = ASTNode::Multiply { left, right };
 
         let bytecode = generate(&multiply);
-        assert_eq!(-4.0, interpret(&bytecode).unwrap());
+        assert_eq!(-4.0, execute(&bytecode).unwrap());
     }
 
     #[test]
@@ -78,7 +78,7 @@ mod tests {
         let div = ASTNode::Divide { left, right };
 
         let bytecode = generate(&div);
-        assert_eq!(-0.5, interpret(&bytecode).unwrap());
+        assert_eq!(-0.5, execute(&bytecode).unwrap());
     }
 
     #[test]
@@ -89,6 +89,6 @@ mod tests {
         let div = ASTNode::Divide { left, right };
 
         let bytecode = generate(&div);
-        assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), interpret(&bytecode));
+        assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), execute(&bytecode));
     }
 }
