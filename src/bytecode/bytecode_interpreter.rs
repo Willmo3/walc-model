@@ -4,37 +4,47 @@ use crate::bytecode::stackframe::StackFrame;
 
 const IMM_LEN: usize = 8;
 
-/// Interpret a collection of bytes as a walc program.
-/// Return f64 result of computation.
+struct InterpreterState<'a> {
+    code: &'a Vec<u8>,
+    index: usize,
+    errors: String,
+}
+
+/// Execute a collection of bytes as a walc program.
+/// Return f64 result of computation, or all errors encountered.
 pub fn execute(bytes: &Vec<u8>) -> Result<f64, String> {
-    let mut stack = StackFrame::new();
-    interpret_frame(bytes, &mut stack)
+    let mut state = InterpreterState { code: bytes, index: 0, errors: String::new() };
+    let mut root_frame = StackFrame::new();
+    
+    match interpret_frame(&mut state, &mut root_frame) {
+        true => Ok(root_frame.pop_value().unwrap()),
+        false => Err(state.errors),
+    }
 }
 
 /*
  * Interpret a single stack frame, recursing if a new level of depth found.
- * Returns result of interpreting frame.
+ * Returns whether frame resulted in bad result.
  */
-fn interpret_frame(bytes: &Vec<u8>, frame: &mut StackFrame) -> Result<f64, String> {
-    let mut errors = String::new();
-    let mut index = 0;
-
-    while index < bytes.len() {
-        let operation = bytes[index];
+fn interpret_frame(state: &mut InterpreterState, frame: &mut StackFrame) -> bool {
+    while state.index < state.code.len() {
+        let operation = state.code[state.index];
         match Opcode::opcode_from_byte(operation) {
             PUSH => {
-                index += 1; // Skip opcode.
+                state.index += 1; // Skip opcode.
 
                 let mut immediate_bytes = [0u8; IMM_LEN];
-                immediate_bytes[..IMM_LEN].copy_from_slice(&bytes[index..(index + IMM_LEN)]);
+                immediate_bytes[..IMM_LEN].copy_from_slice(
+                    &state.code[state.index..(state.index + IMM_LEN)]);
+
                 frame.push_value(f64::from_le_bytes(immediate_bytes));
-                index += 8; // Read 8-bytes from bytecode value.
+                state.index += 8; // Read 8-bytes from bytecode value.
             },
             ADD | SUBTRACT | MULTIPLY | DIVIDE | EXP => {
-                index += 1; // Skip opcode
+                state.index += 1; // Skip opcode
 
                 if frame.stack_size() < 2 {
-                    errors.push_str("Binary operation attempted with insufficient operands!\n");
+                    state.errors.push_str("Binary operation attempted with insufficient operands!\n");
                     continue
                 }
 
@@ -48,27 +58,24 @@ fn interpret_frame(bytes: &Vec<u8>, frame: &mut StackFrame) -> Result<f64, Strin
                     MULTIPLY => frame.push_value(left * right),
                     DIVIDE => {
                         if right == 0.0 {
-                            errors.push_str("Cannot divide by zero.\n");
+                            state.errors.push_str("Cannot divide by zero.\n");
                             continue
                         }
                         frame.push_value(left / right)
                     },
                     EXP => frame.push_value(left.powf(right)),
-                    _ => errors.push_str(&format!("Unknown binary operation: {}\n", operation)),
+                    _ => state.errors.push_str(&format!("Unknown binary operation: {}\n", operation)),
                 }
             }
         }
     }
 
     if frame.stack_size() == 0 {
-        errors.push_str("No result.\n");
+        state.errors.push_str("No result.\n");
     }
 
-    if errors.is_empty() {
-        Ok(frame.pop_value().unwrap())
-    } else {
-        Err(errors)
-    }
+    // If any errors have been detected, an interpretation round is tainted.
+    state.errors.is_empty()
 }
 
 #[cfg(test)]
