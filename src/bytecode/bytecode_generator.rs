@@ -4,8 +4,9 @@
 // Author: Will Morris
 
 use crate::ast::ast::ASTNode;
-use crate::bytecode::bytecode_interpreter::Opcode;
-use crate::bytecode::bytecode_interpreter::Opcode::{ADD, DIVIDE, MULTIPLY, PUSH, SUBTRACT, EXP};
+use crate::bytecode::opcode::Opcode;
+use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
+
 
 /// Given an ast, generate a list of bytes corresponding to walc bytecode.
 pub fn generate(ast: &ASTNode) -> Vec<u8> {

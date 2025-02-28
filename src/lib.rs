@@ -6,6 +6,7 @@ use crate::frontend::{lexer, parser};
 mod bytecode {
     pub mod bytecode_interpreter;
     pub mod bytecode_generator;
+    mod opcode;
 }
 
 /// Walc AST operations, including treewalk interpreter.
