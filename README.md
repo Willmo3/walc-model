@@ -43,7 +43,8 @@ In many cases, it will be ideal to write translation functions on the frontend -
 Note that other public fields exist, which may be viewed on the `crates.io` package explorer. This documentation merely serves to explain the key interface of `walc-model`. 
 
 ## Grammar:
-start = add
+start = assign
+assign = IDENTIFIER EQUALS add
 add = mult ((PLUS | MINUS) mult)*
 mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
