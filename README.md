@@ -20,8 +20,7 @@ Note that a standard AST must first be translated to bytecode.
 
 ### `bytecode_generator::generate`
 Given an AST, returns a stream of Walc bytecode. 
-This function is intended to serve as a reference for other implementations.
-In many cases, it will be ideal to write translation functions on the frontend -- for instance, in a WebAssembly environment, where data transports can dominate computation time, translating to bytecode before using walc-model may be ideal.
+In some cases, it may be ideal to write translation functions on the frontend -- for instance, in a WebAssembly environment, where data transports can dominate computation time.
 
 #### Params: 
 - ast: `&ASTNode`
@@ -34,12 +33,14 @@ Note that other public fields exist, which may be viewed on the `crates.io` pack
 
 ## Grammar:
 start = assign
-assign = IDENTIFIER EQUALS add
+assign = identifier EQUALS add
 add = mult ((PLUS | MINUS) mult)*
 mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
 atom = LEFT_PARENS start RIGHT_PARENS
      | NUMBER_LITERAL
+
+identifier = ALPHABETIC(ALPHANUMERIC | UNDERSCORE)*
 
 ## Code format:
 The Walc interpreter supports both AST and Bytecode formats for execution.
