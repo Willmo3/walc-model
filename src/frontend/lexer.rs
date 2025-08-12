@@ -1,4 +1,4 @@
-use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Equals, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given a string "data" containing the source code.
 /// Return a list of lexemes associated with that source
@@ -18,6 +18,7 @@ pub fn lex(data: &str) -> Result<Vec<Lexeme>, String> {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LexemeType {
+    Identifier,
     Numeric, // Coerce all numbers to floats
     OpenParen,
     CloseParen,
@@ -25,7 +26,8 @@ pub enum LexemeType {
     Minus,
     Star,
     DoubleStar,
-    Slash ,
+    Slash,
+    Equals,
     // Special token that all files are terminated by
     EOF,
 }
@@ -107,9 +109,12 @@ impl Lexer {
                 } else {
                     Ok( Lexeme::new (Minus, self.line, String::from("-")) )
                 }
+            '=' => Ok( Lexeme::new(Equals, self.line, String::from("=")) ),
             _ =>
                 if start.is_ascii_digit() {
                     self.lex_number(start)
+                } else if start.is_alphabetic() {
+                    self.lex_identifier(start)
                 } else {
                     Err(format!("Unexpected character: '{}'.\n", self.current()))
                 }
@@ -119,6 +124,21 @@ impl Lexer {
 
 // Literal lexers
 impl Lexer {
+    // Lex a generic identifier.
+    fn lex_identifier(&mut self, start: char) -> Result<Lexeme, String> {
+        // Identifiers must start with an alphabetical character.
+        assert!(start.is_alphabetic());
+
+        let mut chars = start.to_string();
+        // Then they may have any number of alphanumeric characters or underscores.
+        while self.in_bounds() && (
+            self.current().is_alphanumeric() || self.current() == '_') {
+            chars.push(self.next());
+        }
+        // This is the named identifier.
+        Ok ( Lexeme::new( Identifier, self.line, chars))
+    }
+
     // Lex a numeric literal, starting with character char.
     // All numbers are converted to floats.
     fn lex_number(&mut self, start: char) -> Result<Lexeme, String> {
@@ -182,22 +202,25 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use crate::frontend::lexer::{lex, Lexeme};
-    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar};
+    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar, Identifier, Equals};
 
     #[test]
     fn test_lex() {
-        let input = "(3 + 5)\n * 3 / -2";
+        let input = "x_\nvalue = (3 + 5)\n * 3 / -2";
         let expected = vec![
-            Lexeme::new(OpenParen, 1, String::from("(")),
-            Lexeme::new(Numeric, 1, String::from("3")),
-            Lexeme::new(Plus, 1, String::from("+")),
-            Lexeme::new(Numeric, 1, String::from("5")),
-            Lexeme::new(CloseParen, 1, String::from(")")),
-            Lexeme::new(Star, 2, String::from("*")),
+            Lexeme::new(Identifier, 1, String::from("x_")),
+            Lexeme::new(Identifier, 2, String::from("value")),
+            Lexeme::new(Equals, 2, String::from("=")),
+            Lexeme::new(OpenParen, 2, String::from("(")),
             Lexeme::new(Numeric, 2, String::from("3")),
-            Lexeme::new(Slash, 2, String::from("/")),
-            Lexeme::new(Numeric, 2, String::from("-2")),
-            Lexeme::new(EOF, 2, String::from("end of file")),
+            Lexeme::new(Plus, 2, String::from("+")),
+            Lexeme::new(Numeric, 2, String::from("5")),
+            Lexeme::new(CloseParen, 2, String::from(")")),
+            Lexeme::new(Star, 3, String::from("*")),
+            Lexeme::new(Numeric, 3, String::from("3")),
+            Lexeme::new(Slash, 3, String::from("/")),
+            Lexeme::new(Numeric, 3, String::from("-2")),
+            Lexeme::new(EOF, 3, String::from("end of file")),
                             ];
         let tokens = lex(input);
         assert_eq!(Ok(expected), tokens);
