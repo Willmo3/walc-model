@@ -7,16 +7,6 @@ Walc is designed as a modular language which supports frontends in multiple lang
 To enable its modular design, Walc has been published as a crate, so that different frontends can pull it in as a dependency. https://crates.io/crates/walc_model
 
 ## API
-### `treewalk_interpreter::interpret`
-This function executes a program AST without converting to bytecode.
-
-#### Params:
-- ast: `&ASTNode`
-  - Tree to interpret.
-
-#### Returns:
-- Result of computation as a 64-bit float or a String error message.
-
 ### `bytecode_interpreter::interpret`
 This function executes a collection of Walc bytecode. 
 Note that a standard AST must first be translated to bytecode.
