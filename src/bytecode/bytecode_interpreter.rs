@@ -1,6 +1,6 @@
 use crate::bytecode::opcode::Opcode;
 use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
-use crate::bytecode::stackframe::StackFrame;
+use crate::bytecode::stackframe::Binding;
 
 const IMM_LEN: usize = 8;
 
@@ -14,19 +14,24 @@ struct InterpreterState<'a> {
 /// Return f64 result of computation, or all errors encountered.
 pub fn execute(bytes: &Vec<u8>) -> Result<f64, String> {
     let mut state = InterpreterState { code: bytes, index: 0, errors: String::new() };
-    let mut root_frame = StackFrame::new();
+    let mut stack: Vec<f64> = Vec::new();
 
-    match interpret_frame(&mut state, &mut root_frame) {
-        true => Ok(root_frame.pop_value().unwrap()),
+    // Begin interpreting from the program's root scope, recursively descending lower.
+    let mut root_frame = Binding::new();
+    match interpret_scope(&mut state, &mut stack, &mut root_frame) {
+        true => Ok(stack.pop().unwrap()),
         false => Err(state.errors),
     }
 }
 
 /*
- * Interpret a single stack frame, recursing if a new level of depth found.
+ * Interpret a single level of program scope, recursing if a new level of depth found.
  * Returns whether frame resulted in bad result.
  */
-fn interpret_frame(state: &mut InterpreterState, frame: &mut StackFrame) -> bool {
+fn interpret_scope(state: &mut InterpreterState,
+                   stack: &mut Vec<f64>,
+                   scope_var_binding: &mut Binding) -> bool {
+
     while state.index < state.code.len() {
         let operation = state.code[state.index];
         match Opcode::opcode_from_byte(operation) {
@@ -37,40 +42,40 @@ fn interpret_frame(state: &mut InterpreterState, frame: &mut StackFrame) -> bool
                 immediate_bytes[..IMM_LEN].copy_from_slice(
                     &state.code[state.index..(state.index + IMM_LEN)]);
 
-                frame.push_value(f64::from_le_bytes(immediate_bytes));
+                stack.push(f64::from_le_bytes(immediate_bytes));
                 state.index += 8; // Read 8-bytes from bytecode value.
             },
             ADD | SUBTRACT | MULTIPLY | DIVIDE | EXP => {
                 state.index += 1; // Skip opcode
 
-                if frame.stack_size() < 2 {
+                if stack.len() < 2 {
                     state.errors.push_str("Binary operation attempted with insufficient operands!\n");
                     continue
                 }
 
                 // Operands pushed onto stack in reverse order.
-                let right = frame.pop_value().unwrap();
-                let left = frame.pop_value().unwrap();
+                let right = stack.pop().unwrap();
+                let left = stack.pop().unwrap();
 
                 match Opcode::opcode_from_byte(operation) {
-                    ADD => frame.push_value(left + right),
-                    SUBTRACT => frame.push_value(left - right),
-                    MULTIPLY => frame.push_value(left * right),
+                    ADD => stack.push(left + right),
+                    SUBTRACT => stack.push(left - right),
+                    MULTIPLY => stack.push(left * right),
                     DIVIDE => {
                         if right == 0.0 {
                             state.errors.push_str("Cannot divide by zero.\n");
                             continue
                         }
-                        frame.push_value(left / right)
+                        stack.push(left / right)
                     },
-                    EXP => frame.push_value(left.powf(right)),
+                    EXP => stack.push(left.powf(right)),
                     _ => state.errors.push_str(&format!("Unknown binary operation: {}\n", operation)),
                 }
             }
         }
     }
 
-    if frame.stack_size() == 0 {
+    if stack.len() == 0 {
         state.errors.push_str("No result.\n");
     }
 
