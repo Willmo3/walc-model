@@ -1,6 +1,8 @@
+use std::error::Error;
 use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT, ASSIGN };
 use crate::bytecode::stackframe::Binding;
+use std::str;
 
 const IMM_LEN: usize = 8;
 
@@ -34,7 +36,37 @@ fn interpret_scope(state: &mut InterpreterState,
 
     while state.index < state.code.len() {
         let operation = state.code[state.index];
+        // TODO: when error, complain
         match Opcode::opcode_from_byte(operation) {
+            ASSIGN => {
+                state.index += 1; // Skip opcode
+
+                // Previous code must have produced value on stack to use.
+                if stack.is_empty() {
+                    state.errors.push_str("Assignment attempted without value!\n");
+                    continue
+                }
+
+                // The next field will be the length of the identifier.
+                let length = state.code[state.index] as usize;
+                state.index += 1;
+
+                // Identifier must be comprised of well-formatted utf8 bytes.
+                // We do not support multi-byte characters yet.
+                let identifier = str::from_utf8(&state.code[state.index..(state.index + length)]);
+                match identifier {
+                    Ok(value) => {
+                        state.index += value.len();
+                        // NOTE: currently, assignments evaluate to whatever value was assigned.
+                        scope_var_binding.set_bind(String::from(value), *stack.first().unwrap())
+                    }
+                    Err(e) => {
+                        state.index += e.valid_up_to();
+                        state.errors.push_str("Bytecode UTF conversion error. Expected: stream of valid UTF8 bytes for identifier.\n");
+                        // Skip past the valid parts of the string and continue parsing from the illegal index.
+                    }
+                }
+            },
             PUSH => {
                 state.index += 1; // Skip opcode.
 
@@ -43,7 +75,7 @@ fn interpret_scope(state: &mut InterpreterState,
                     &state.code[state.index..(state.index + IMM_LEN)]);
 
                 stack.push(f64::from_le_bytes(immediate_bytes));
-                state.index += 8; // Read 8-bytes from bytecode value.
+                state.index += IMM_LEN; // Read 8-bytes from bytecode value.
             },
             ADD | SUBTRACT | MULTIPLY | DIVIDE | EXP => {
                 state.index += 1; // Skip opcode
@@ -86,6 +118,8 @@ fn interpret_scope(state: &mut InterpreterState,
 #[cfg(test)]
 mod tests {
     use crate::bytecode::bytecode_interpreter::execute;
+    use crate::bytecode::opcode::Opcode;
+    use crate::bytecode::opcode::Opcode::{ASSIGN, DIVIDE, MULTIPLY, SUBTRACT};
 
     #[test]
     fn test_add() {
@@ -186,5 +220,32 @@ mod tests {
         code.push(5u8);
 
         assert_eq!(execute(&code).unwrap(), 512.0);
+    }
+
+    #[test]
+    fn test_assign() {
+        // value_a = 2 - 3 * 2
+        let mut code = Vec::new();
+
+        // 2
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+
+        // 3 * 2
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(2.0));
+        code.push(0u8);
+        code.extend_from_slice(&f64::to_le_bytes(3.0));
+        code.push(Opcode::byte_from_opcode(&MULTIPLY));
+
+        // 2 - 3 * 2
+        code.push(Opcode::byte_from_opcode(&SUBTRACT));
+
+        let identifier = "value_a";
+        code.push(Opcode::byte_from_opcode(&ASSIGN));
+        code.push(identifier.len() as u8);
+        code.extend_from_slice(identifier.as_bytes());
+
+        assert_eq!(execute(&code).unwrap(), -4.0);
     }
 }
