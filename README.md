@@ -71,10 +71,20 @@ We have tested serialization under a json scheme.
     * Pop two 8-byte values from the stack, divide the second one by the first, and push the result onto the stack.
 * 0x5: exponentiate
     * Pop two 8-byte values from the stack, raise the second one to the first one's power, and push the result onto the stack.
+* 0x6: assign
+    * Read a one-byte length field, then convert the next *length* bytes into an identifier and assign the value at the top of the stack to that identifier.
 
 #### Instruction structure:
+
+##### All instructions:
 * Byte one: instruction code.
+
+##### Arithmetic Instructions
 * Bytes two-nine (optional): operand.
+
+##### Assignment Instructions
+* Byte two: identifier length *l* (max 255 bytes)
+* Bytes three to l+1: identifier name.
 
 ## Design notes
 
