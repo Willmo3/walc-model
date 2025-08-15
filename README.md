@@ -32,7 +32,9 @@ In some cases, it may be ideal to write translation functions on the frontend --
 Note that other public fields exist, which may be viewed on the `crates.io` package explorer. This documentation merely serves to explain the key interface of `walc-model`. 
 
 ## Grammar:
-start = assign
+start = statement* expr
+statement = expr SEMICOLON
+expr = assign
 assign = identifier EQUALS add
 add = mult ((PLUS | MINUS) mult)*
 mult = exp ((STAR | SLASH) exp)*
