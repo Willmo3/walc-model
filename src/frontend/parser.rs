@@ -2,7 +2,7 @@ use std::str::FromStr;
 use crate::frontend::lexer::Lexeme;
 use crate::ast::ast::ASTNode;
 use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
-use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Equals, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given an ordered collection of lexemes
 /// Build an abstract syntax tree
@@ -25,7 +25,7 @@ struct Parser {
 // Parse methods
 impl Parser {
     fn parse(&mut self) -> Result<ASTNode, String> {
-        let ast = self.parse_add();
+        let ast = self.parse_assign();
         match ast {
             Ok(ast) => {
                 // Complain if some of AST ignored.
@@ -38,14 +38,25 @@ impl Parser {
             Err(error) => Err(error),
         }
     }
-    
-    // TODO: when AST supports assignment statements, modify.
-    fn parse_identifier(&mut self) -> Result<ASTNode, String> {
-        match self.current().lexeme_type {
-            Identifier => {
-                self.parse_add()
+
+    fn parse_assign(&mut self) -> Result<ASTNode, String> {
+        if self.in_bounds() && self.current().lexeme_type == Identifier {
+            let name = self.current().text.clone();
+            self.advance();
+
+            // For now, we expect there to always be an equals sign.
+            // TODO: as we add rval context, make sure this works as expected!
+            if self.current().lexeme_type != Equals {
+                return Err(format!("Expected equals on line {}.\n", self.current().line));
             }
-            _ => self.parse_add()
+            self.advance();
+
+            match self.parse_add() {
+                Ok(ast) => { Ok (ASTNode::Assignment { name, value: Box::new(ast) }) }
+                Err(error) => { Err(error) }
+            }
+        } else {
+            self.parse_add()
         }
     }
 
@@ -59,6 +70,7 @@ impl Parser {
             String::new()
         };
 
+        // TODO: remember, EOF lexeme means that in_bounds checks are redundant!
         // Even if already errored, we will continue attempting to parse to gain more errors.
         while self.in_bounds()
             && (self.current().lexeme_type == Plus || self.current().lexeme_type == Minus) {
@@ -122,7 +134,7 @@ impl Parser {
                     Slash => {
                         left = Ok ( Divide { left: Box::new(left?), right: Box::new(right?) } )
                     }
-                    _ => panic!("Internal error -- verified earlier it was plus or minus!" )
+                    _ => panic!("Internal error -- verified earlier it was star or slash!" )
                 }
             }
         }
@@ -215,6 +227,7 @@ impl Parser {
     }
 
     fn current(&self) -> &Lexeme {
+        // TODO: switch to optional type?
         assert!(self.in_bounds());
         &self.lexemes[self.index]
     }
@@ -222,7 +235,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::ASTNode::{Add, Divide, Exponentiate, Multiply, Number};
+    use crate::ast::ast::ASTNode::{Add, Assignment, Divide, Exponentiate, Multiply, Number};
     use crate::frontend::lexer::lex;
     use crate::frontend::parser::parse;
 
@@ -280,5 +293,31 @@ mod tests {
         let lexemes = lex(input).unwrap();
 
         parse(lexemes).unwrap().expect("Unexpected parse error");
+    }
+
+    #[test]
+    fn test_assign() {
+        let input = "x_value = 3 + 2";
+
+        let three = Number { value: 3.0 };
+        let two = Number { value: 2.0 };
+        let addition = Add { left: Box::new(three), right: Box::new(two) };
+        let assignment = Assignment { name: String::from("x_value"), value: Box::new(addition) };
+
+        assert_eq!(assignment, parse(lex(input).unwrap()).unwrap().unwrap());
+
+    }
+
+    #[test]
+    fn test_unterminated_assign() {
+        let nothing_after_equals = "x_value =";
+        let lexemes = lex(nothing_after_equals).unwrap();
+        assert_eq!(Err("Expected number on line 1, got end of file instead.\n".to_string()), parse(lexemes).unwrap());
+
+        let no_equals = "x_value 3";
+        let lexemes = lex(no_equals).unwrap();
+        // TODO: helper for expect / instead?
+        assert_eq!(Err("Expected equals on line 1.\n".to_string()), parse(lexemes).unwrap());
+
     }
 }
