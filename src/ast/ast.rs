@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum ASTNode {
     Number { value: f64 },
+    Assignment { name: String, value: Box<ASTNode> },
     Exponentiate { left: Box<ASTNode>, right: Box<ASTNode> },
     Add { left: Box<ASTNode>, right: Box<ASTNode> },
     Subtract { left: Box<ASTNode>, right: Box<ASTNode> },
@@ -29,6 +30,10 @@ impl ASTNode {
                 | ASTNode::Exponentiate { left, right} => {
                 left.postorder_traverse(visit_fn);
                 right.postorder_traverse(visit_fn);
+            }
+            // Unary operations: one child
+            ASTNode::Assignment { name, value } => {
+                value.postorder_traverse(visit_fn);
             }
             // Atoms: no children
             _ => {}

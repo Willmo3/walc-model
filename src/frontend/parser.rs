@@ -2,7 +2,7 @@ use std::str::FromStr;
 use crate::frontend::lexer::Lexeme;
 use crate::ast::ast::ASTNode;
 use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
-use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given an ordered collection of lexemes
 /// Build an abstract syntax tree
@@ -36,6 +36,16 @@ impl Parser {
                 }
             }
             Err(error) => Err(error),
+        }
+    }
+    
+    // TODO: when AST supports assignment statements, modify.
+    fn parse_identifier(&mut self) -> Result<ASTNode, String> {
+        match self.current().lexeme_type {
+            Identifier => {
+                self.parse_add()
+            }
+            _ => self.parse_add()
         }
     }
 

@@ -58,6 +58,7 @@ fn interpret_scope(state: &mut InterpreterState,
                     Ok(value) => {
                         state.index += value.len();
                         // NOTE: currently, assignments evaluate to whatever value was assigned.
+                        // Therefore, we do not bother popping the value from the stack.
                         scope_var_binding.set_bind(String::from(value), *stack.first().unwrap())
                     }
                     Err(e) => {

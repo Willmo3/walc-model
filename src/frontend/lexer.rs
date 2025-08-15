@@ -135,8 +135,13 @@ impl Lexer {
             self.current().is_alphanumeric() || self.current() == '_') {
             chars.push(self.next());
         }
-        // This is the named identifier.
-        Ok ( Lexeme::new( Identifier, self.line, chars))
+
+        if chars.len() > u8::max_value() as usize {
+            Err ( "Name out of bounds!".to_string() )
+        } else {
+            // This is the named identifier.
+            Ok ( Lexeme::new( Identifier, self.line, chars))
+        }
     }
 
     // Lex a numeric literal, starting with character char.

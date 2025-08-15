@@ -5,7 +5,7 @@
 
 use crate::ast::ast::ASTNode;
 use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
 
 
 /// Given an ast, generate a list of bytes corresponding to walc bytecode.
@@ -14,6 +14,13 @@ pub fn generate(ast: &ASTNode) -> Vec<u8> {
 
     let mut generator_fn = | token: &ASTNode| {
         match token {
+            ASTNode::Assignment { name, .. } => {
+                code.push(Opcode::byte_from_opcode(&ASSIGN));
+                // Invariant: no name will have more than 256 characters.
+                code.push(name.len() as u8);
+                code.extend_from_slice(&name.as_bytes());
+                // Linear code preceding assignment will have produced value onto stack.
+            }
             ASTNode::Number { value } => {
                 // Add push operation to bytecode and append floating point rep of number.
                 code.push(Opcode::byte_from_opcode(&PUSH));
@@ -90,5 +97,20 @@ mod tests {
 
         let bytecode = generate(&div);
         assert_eq!(Err("Cannot divide by zero.\nNo result.\n".to_string()), execute(&bytecode));
+    }
+
+    #[test]
+    fn test_assign() {
+        // x_var = 3 ** -1 - 1
+
+        let three = Box::new(ASTNode::Number { value: 3.0 });
+        let minus1 = Box::new(ASTNode::Number { value: -1.0 });
+        let exp = Box::new(ASTNode::Exponentiate { left: three, right: minus1 });
+        let one = Box::new(ASTNode::Number { value: 1.0 });
+        let subtract = Box::new(ASTNode::Subtract { left: exp, right: one });
+        let root = ASTNode::Assignment { name: String::from("x_var"), value: subtract };
+
+        let bytecode = generate(&root);
+        assert_eq!(-0.6666666666666667, execute(&bytecode).unwrap());
     }
 }
