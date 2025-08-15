@@ -1,4 +1,4 @@
-use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Equals, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
+use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Equals, Identifier, Minus, Numeric, OpenParen, Plus, Semicolon, Slash, Star, EOF};
 
 /// Given a string "data" containing the source code.
 /// Return a list of lexemes associated with that source
@@ -28,6 +28,7 @@ pub enum LexemeType {
     DoubleStar,
     Slash,
     Equals,
+    Semicolon,
     // Special token that all files are terminated by
     EOF,
 }
@@ -110,6 +111,7 @@ impl Lexer {
                     Ok( Lexeme::new (Minus, self.line, String::from("-")) )
                 }
             '=' => Ok( Lexeme::new(Equals, self.line, String::from("=")) ),
+            ';' => Ok (Lexeme::new(Semicolon, self.line, String::from(";"))),
             _ =>
                 if start.is_ascii_digit() {
                     self.lex_number(start)
@@ -206,8 +208,9 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
+    use crate::ast::ast::ASTNode::Assignment;
     use crate::frontend::lexer::{lex, Lexeme};
-    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar, Identifier, Equals};
+    use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar, Identifier, Equals, Semicolon};
 
     #[test]
     fn test_lex() {
@@ -249,6 +252,20 @@ mod tests {
         assert_eq!(Ok(vec![
             Lexeme::new(DoubleStar, 1, String::from("**")),
             Lexeme::new(EOF, 1, String::from("end of file"))
+        ]), lex(input));
+    }
+
+    #[test]
+    fn test_statement() {
+        // Note: xval used in rval context -- not yet supported.
+        let input = "xval\n = 3.14\n\n; xval\n";
+        assert_eq!(Ok(vec![
+            Lexeme::new(Identifier, 1, String::from("xval")),
+            Lexeme::new(Equals, 2, String::from("=")),
+            Lexeme::new(Numeric, 2, String::from("3.14")),
+            Lexeme::new(Semicolon, 4, String::from(";")),
+            Lexeme::new(Identifier, 4, String::from("xval")),
+            Lexeme::new(EOF, 5, String::from("end of file"))
         ]), lex(input));
     }
 }
