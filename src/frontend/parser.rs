@@ -40,7 +40,7 @@ impl Parser {
     }
 
     fn parse_assign(&mut self) -> Result<ASTNode, String> {
-        if self.in_bounds() && self.current().lexeme_type == Identifier {
+        if self.current().lexeme_type == Identifier {
             let name = self.current().text.clone();
             self.advance();
 
@@ -70,10 +70,8 @@ impl Parser {
             String::new()
         };
 
-        // TODO: remember, EOF lexeme means that in_bounds checks are redundant!
         // Even if already errored, we will continue attempting to parse to gain more errors.
-        while self.in_bounds()
-            && (self.current().lexeme_type == Plus || self.current().lexeme_type == Minus) {
+        while self.current().lexeme_type == Plus || self.current().lexeme_type == Minus {
 
             let operation = self.current().lexeme_type;
             self.advance();
@@ -114,8 +112,7 @@ impl Parser {
         };
 
         // Even if error found, will attempt to continue parsing to gain more errors
-        while self.in_bounds()
-            && (self.current().lexeme_type == Star || self.current().lexeme_type == Slash) {
+        while self.current().lexeme_type == Star || self.current().lexeme_type == Slash {
 
             let operation = self.current().lexeme_type;
             self.advance();
@@ -158,7 +155,7 @@ impl Parser {
 
         // If the next lexeme in the stream is a double star (exponentiation), recurse!
         // Right associativity makes recursive implementation more efficient.
-        if self.in_bounds() && self.current().lexeme_type == DoubleStar {
+        if self.current().lexeme_type == DoubleStar {
             // Skip doublestar literal.
             self.advance();
 
@@ -218,17 +215,11 @@ impl Parser {
 
 // Parser helpers
 impl Parser {
-    fn in_bounds(&self) -> bool {
-        self.index < self.lexemes.len()
-    }
-
     fn advance(&mut self) {
         self.index += 1;
     }
 
     fn current(&self) -> &Lexeme {
-        // TODO: switch to optional type?
-        assert!(self.in_bounds());
         &self.lexemes[self.index]
     }
 }
