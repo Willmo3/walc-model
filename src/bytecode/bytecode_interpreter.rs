@@ -36,7 +36,6 @@ fn interpret_scope(state: &mut InterpreterState,
 
     while state.index < state.code.len() {
         let operation = state.code[state.index];
-        // TODO: when error, complain
         match Opcode::opcode_from_byte(operation) {
             ASSIGN => {
                 state.index += 1; // Skip opcode
@@ -120,7 +119,7 @@ fn interpret_scope(state: &mut InterpreterState,
 mod tests {
     use crate::bytecode::bytecode_interpreter::execute;
     use crate::bytecode::opcode::Opcode;
-    use crate::bytecode::opcode::Opcode::{ASSIGN, DIVIDE, MULTIPLY, SUBTRACT};
+    use crate::bytecode::opcode::Opcode::{ASSIGN, MULTIPLY, SUBTRACT};
 
     #[test]
     fn test_add() {

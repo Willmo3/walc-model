@@ -63,4 +63,10 @@ mod tests {
         let source = "2**3**2";
         assert_eq!(Ok("512".to_string()), interpret(source));
     }
+
+    #[test]
+    fn test_assign() {
+        let source = "x = 3 - 2";
+        assert_eq!(Ok("1".to_string()), interpret(source));
+    }
 }
