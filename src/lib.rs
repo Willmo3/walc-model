@@ -4,10 +4,14 @@ use crate::frontend::{lexer, parser};
 /// Bytecode support for the walc programming language.
 /// Author: Will Morris
 mod bytecode {
-    pub mod bytecode_interpreter;
     pub mod bytecode_generator;
-    mod opcode;
-    mod stackframe;
+    pub(crate) mod opcode;
+}
+
+mod vm {
+    pub mod interpreter;
+    mod runtime_state;
+    mod scope_binding;
 }
 
 /// Walc AST operations, including treewalk interpreter.
@@ -36,7 +40,7 @@ pub fn interpret(source_code: &str) -> Result<String, String> {
         None => return Err(String::from("")),
     };
     let bytecode = bytecode_generator::generate(&ast);
-    match bytecode::bytecode_interpreter::execute(&bytecode) {
+    match vm::interpreter::execute(&bytecode) {
         Ok(value) => Ok(format!("{}", value)),
         Err(runtime_error) => Err(String::from(runtime_error))
     }

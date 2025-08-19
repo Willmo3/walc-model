@@ -44,7 +44,7 @@ pub fn generate(ast: &ASTNode) -> Vec<u8> {
 mod tests {
     use crate::ast::ast::ASTNode;
     use crate::bytecode::bytecode_generator::generate;
-    use crate::bytecode::bytecode_interpreter::execute;
+    use crate::vm::interpreter::execute;
 
     #[test]
     fn test_add() {

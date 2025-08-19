@@ -1,6 +1,5 @@
 // Operation API
 
-use crate::ast::ast::ASTNode::VarRead;
 use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, VARREAD, SUBTRACT};
 
 /// Opcodes supported by webwalc bytecode.
@@ -17,6 +16,9 @@ pub enum Opcode {
     VARWRITE,
     VARREAD,
 }
+
+/// Size of an immediate value.
+pub const IMM_LEN: usize = 8;
 
 // Opcode to byte translation
 impl Opcode {

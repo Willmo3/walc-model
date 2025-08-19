@@ -1,8 +1,7 @@
-// Individual frame of Walc execution.
-// Author: Will Morris
-
 use std::collections::HashMap;
 
+/// Represents an individual program scope, such as in a function, and its variable bindings. 
+/// NOTE: currently, the only atoms are primitives.
 pub(crate) struct Binding {
     parent: Option<Box<Binding>>,
     bindings: HashMap<String, f64>,
