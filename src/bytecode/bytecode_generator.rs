@@ -5,7 +5,7 @@
 
 use crate::ast::ast::ASTNode;
 use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, READVAR, SUBTRACT};
 
 
 /// Given an ast, generate a list of bytes corresponding to walc bytecode.
@@ -14,12 +14,20 @@ pub fn generate(ast: &ASTNode) -> Vec<u8> {
 
     let mut generator_fn = | token: &ASTNode| {
         match token {
+            // TODO: change assignment to writevar
             ASTNode::Assignment { name, .. } => {
                 code.push(Opcode::byte_from_opcode(&ASSIGN));
                 // Invariant: no name will have more than 256 characters.
                 code.push(name.len() as u8);
                 code.extend_from_slice(&name.as_bytes());
                 // Linear code preceding assignment will have produced value onto stack.
+            }
+            ASTNode::VarRead { name } => {
+                code.push(Opcode::byte_from_opcode(&READVAR));
+                // Invariant: no name will have more than 256 characters.
+                code.push(name.len() as u8);
+                code.extend_from_slice(&name.as_bytes());
+                // Value of variable will evaluate to whatever is in dynamic scope.
             }
             ASTNode::Number { value } => {
                 // Add push operation to bytecode and append floating point rep of number.
@@ -43,6 +51,8 @@ mod tests {
     use crate::ast::ast::ASTNode;
     use crate::bytecode::bytecode_generator::generate;
     use crate::bytecode::bytecode_interpreter::execute;
+    use crate::bytecode::opcode::Opcode;
+    use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, PUSH, READVAR};
 
     #[test]
     fn test_add() {
@@ -112,5 +122,27 @@ mod tests {
 
         let bytecode = generate(&root);
         assert_eq!(-0.6666666666666667, execute(&bytecode).unwrap());
+    }
+
+    #[test]
+    fn test_readvar() {
+        // Test whether bytecode for a readvar expression can be generated, separately of its execution.
+
+        // 3 / x_var
+        let name = "x_var";
+
+        let three = Box::new(ASTNode::Number { value: 3.0 });
+        let xvar = Box::new(ASTNode::VarRead { name: name.to_string() });
+        let div = ASTNode::Divide { left: three, right: xvar };
+
+        let mut expected_bytecode: Vec<u8> = Vec::new();
+        expected_bytecode.push(Opcode::byte_from_opcode(&PUSH));
+        expected_bytecode.extend_from_slice(&f64::to_le_bytes(3.0));
+        expected_bytecode.push(Opcode::byte_from_opcode(&READVAR));
+        expected_bytecode.push(name.len() as u8);
+        expected_bytecode.extend_from_slice(&name.as_bytes());
+        expected_bytecode.push(Opcode::byte_from_opcode(&DIVIDE));
+
+        assert_eq!(expected_bytecode, generate(&div));
     }
 }
