@@ -34,11 +34,14 @@ Note that other public fields exist, which may be viewed on the `crates.io` pack
 ## Grammar:
 start = statement* expr
 statement = expr SEMICOLON
-expr = assign
-assign = identifier EQUALS add
+
+expr = add (assign)*
+assign = EQUALS add
+
 add = mult ((PLUS | MINUS) mult)*
 mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
+
 atom = LEFT_PARENS start RIGHT_PARENS
      | NUMBER_LITERAL
      | identifier
@@ -46,7 +49,7 @@ atom = LEFT_PARENS start RIGHT_PARENS
 identifier = ALPHABETIC(ALPHANUMERIC | UNDERSCORE)*
 
 ## Code format:
-The Walc interpreter supports both AST and Bytecode formats for execution.
+The Walc interpreter can directly execute formatted Walc bytecode, or you can invoke our builtin frontend with raw source code.
 
 ### Tree format:
 To bolster compatibility, Walc-model ASTs are serializable and deserializable.
