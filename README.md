@@ -41,6 +41,7 @@ mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
 atom = LEFT_PARENS start RIGHT_PARENS
      | NUMBER_LITERAL
+     | identifier
 
 identifier = ALPHABETIC(ALPHANUMERIC | UNDERSCORE)*
 
