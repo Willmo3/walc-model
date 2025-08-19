@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub enum ASTNode {
     Number { value: f64 },
     Assignment { name: String, value: Box<ASTNode> },
+    VarRead { name: String },
     Exponentiate { left: Box<ASTNode>, right: Box<ASTNode> },
     Add { left: Box<ASTNode>, right: Box<ASTNode> },
     Subtract { left: Box<ASTNode>, right: Box<ASTNode> },

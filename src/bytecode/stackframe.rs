@@ -19,7 +19,7 @@ impl Binding {
     pub(crate) fn set_bind(&mut self, binding_name: String, bind_value: f64) {
         self.bindings.insert(binding_name, bind_value);
     }
-    fn get_bind(&self, binding_name: &str) -> Option<&f64> {
+    pub(crate) fn get_bind(&self, binding_name: &str) -> Option<&f64> {
         self.bindings.get(binding_name)
     }
 }

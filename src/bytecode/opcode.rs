@@ -1,6 +1,7 @@
 // Operation API
 
-use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT};
+use crate::ast::ast::ASTNode::VarRead;
+use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, READVAR, SUBTRACT};
 
 /// Opcodes supported by webwalc bytecode.
 pub enum Opcode {
@@ -11,6 +12,7 @@ pub enum Opcode {
     DIVIDE,
     EXP,
     ASSIGN,
+    READVAR,
 }
 
 // Opcode to byte translation
@@ -25,6 +27,7 @@ impl Opcode {
             DIVIDE => 4,
             EXP => 5,
             ASSIGN => 6,
+            READVAR => 7,
         }
     }
 
@@ -39,6 +42,7 @@ impl Opcode {
             4 => DIVIDE,
             5 => EXP,
             6 => ASSIGN,
+            7 => READVAR,
             _ => panic!("Unknown opcode {}", byte),
         }
     }
