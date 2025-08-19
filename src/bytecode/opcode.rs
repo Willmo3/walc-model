@@ -1,18 +1,21 @@
 // Operation API
 
 use crate::ast::ast::ASTNode::VarRead;
-use crate::bytecode::opcode::Opcode::{ADD, ASSIGN, DIVIDE, EXP, MULTIPLY, PUSH, READVAR, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, VARREAD, SUBTRACT};
 
 /// Opcodes supported by webwalc bytecode.
 pub enum Opcode {
     PUSH,
+    
     ADD,
     SUBTRACT,
     MULTIPLY,
     DIVIDE,
     EXP,
-    ASSIGN,
-    READVAR,
+    
+    IDENTIFIER,
+    VARWRITE,
+    VARREAD,
 }
 
 // Opcode to byte translation
@@ -21,13 +24,16 @@ impl Opcode {
     pub fn byte_from_opcode(&self) -> u8 {
         match self {
             PUSH => 0,
+            
             ADD => 1,
             SUBTRACT => 2,
             MULTIPLY => 3,
             DIVIDE => 4,
             EXP => 5,
-            ASSIGN => 6,
-            READVAR => 7,
+            
+            IDENTIFIER => 6,
+            VARWRITE => 7,
+            VARREAD => 8,
         }
     }
 
@@ -36,13 +42,16 @@ impl Opcode {
     pub fn opcode_from_byte(byte: u8) -> Self {
         match byte {
             0 => PUSH,
+            
             1 => ADD,
             2 => SUBTRACT,
             3 => MULTIPLY,
             4 => DIVIDE,
             5 => EXP,
-            6 => ASSIGN,
-            7 => READVAR,
+            
+            6 => IDENTIFIER,
+            7 => VARWRITE,
+            8 => VARREAD,
             _ => panic!("Unknown opcode {}", byte),
         }
     }

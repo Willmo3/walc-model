@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use crate::frontend::lexer::Lexeme;
 use crate::ast::ast::ASTNode;
-use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract};
+use crate::ast::ast::ASTNode::{Add, Divide, Multiply, Subtract, VarWrite};
 use crate::frontend::lexer::LexemeType::{CloseParen, DoubleStar, Equals, Identifier, Minus, Numeric, OpenParen, Plus, Slash, Star, EOF};
 
 /// Given an ordered collection of lexemes
@@ -40,30 +40,34 @@ impl Parser {
     }
 
     fn parse_assign(&mut self) -> Result<ASTNode, String> {
-        if self.current().lexeme_type == Identifier {
-            let name = self.current().text.clone();
-            self.advance();
+        let mut left = self.parse_add();
 
-            // For now, we expect there to always be an equals sign.
-            // TODO: as we add rval context, make sure this works as expected!
-            if self.current().lexeme_type != Equals {
-                return Err(format!("Expected equals on line {}.\n", self.current().line));
-            }
-            self.advance();
-
-            match self.parse_add() {
-                Ok(ast) => { Ok (ASTNode::Assignment { name, value: Box::new(ast) }) }
-                Err(error) => { Err(error) }
-            }
+        // If left is an error message, prime our error reporting with its data
+        let mut err_message = if let Err(message) = &left {
+            message.clone()
         } else {
-            self.parse_add()
+            String::new()
+        };
+
+        // Parse an arbitrarily long chain of assignment expressions.
+        while self.current().lexeme_type == Equals {
+            self.advance();
+            let right = match self.parse_add() {
+                Ok (ast) => { Ok (ast) }
+                Err(error) => { err_message.push_str(&error); Err(error) }
+            };
+
+            if !left.is_err() && !right.is_err() {
+                left = Ok (VarWrite { left: Box::new(left?), right: Box::new(right?) });
+            }
         }
+
+        left
     }
 
     fn parse_add(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_multiply();
 
-        // If left is an error message, prime our error reporting with its data
         let mut err_message = if let Err(message) = &left {
             message.clone()
         } else {
@@ -104,7 +108,6 @@ impl Parser {
     fn parse_multiply(&mut self) -> Result<ASTNode, String> {
         let mut left = self.parse_exponentiation();
 
-        // If left is an error message, prime our error reporting with its data
         let mut err_message = if let Err(message) = &left {
             message.clone()
         } else {
@@ -226,7 +229,7 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::ASTNode::{Add, Assignment, Divide, Exponentiate, Multiply, Number};
+    use crate::ast::ast::ASTNode::{Add, Divide, Exponentiate, Identifier, Multiply, Number, VarWrite};
     use crate::frontend::lexer::lex;
     use crate::frontend::parser::parse;
 
@@ -293,7 +296,9 @@ mod tests {
         let three = Number { value: 3.0 };
         let two = Number { value: 2.0 };
         let addition = Add { left: Box::new(three), right: Box::new(two) };
-        let assignment = Assignment { name: String::from("x_value"), value: Box::new(addition) };
+
+        let identifier = Identifier { name: "x_value".to_string() };
+        let assignment = VarWrite { left: Box::new(identifier), right: Box::new(addition) };
 
         assert_eq!(assignment, parse(lex(input).unwrap()).unwrap().unwrap());
 

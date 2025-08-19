@@ -8,9 +8,16 @@ use serde::{Deserialize, Serialize};
 /// You specify which targets!
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum ASTNode {
+    // Primitives.
+    // For now, only number.
     Number { value: f64 },
-    Assignment { name: String, value: Box<ASTNode> },
-    VarRead { name: String },
+    
+    // Variable accesses.
+    Identifier { name: String },
+    VarWrite { left: Box<ASTNode>, right: Box<ASTNode> },
+    VarRead { child: Box<ASTNode> },
+
+    // Operations
     Exponentiate { left: Box<ASTNode>, right: Box<ASTNode> },
     Add { left: Box<ASTNode>, right: Box<ASTNode> },
     Subtract { left: Box<ASTNode>, right: Box<ASTNode> },
@@ -28,13 +35,14 @@ impl ASTNode {
                 | ASTNode::Subtract {left, right}
                 | ASTNode::Multiply {left, right}
                 | ASTNode::Divide { left, right }
-                | ASTNode::Exponentiate { left, right} => {
+                | ASTNode::Exponentiate { left, right}
+                | ASTNode::VarWrite { left, right } => {
                 left.postorder_traverse(visit_fn);
                 right.postorder_traverse(visit_fn);
             }
             // Unary operations: one child
-            ASTNode::Assignment { name, value } => {
-                value.postorder_traverse(visit_fn);
+            ASTNode::VarRead { child} => {
+                child.postorder_traverse(visit_fn);
             }
             // Atoms: no children
             _ => {}

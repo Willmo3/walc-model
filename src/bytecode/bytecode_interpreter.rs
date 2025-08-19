@@ -1,6 +1,6 @@
 use std::error::Error;
 use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT, ASSIGN, READVAR };
+use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT, VARWRITE, VARREAD, IDENTIFIER};
 use crate::bytecode::stackframe::Binding;
 use std::str;
 use std::str::Utf8Error;
@@ -48,44 +48,44 @@ impl InterpreterState<'_> {
             // More realistic: bound each scope to names in the higher scope
             // Don't need each scope to have its own code.
             match Opcode::opcode_from_byte(operation) {
-                ASSIGN => {
-                    // Previous code must have produced value on stack to use.
-                    if stack.is_empty() {
-                        iteration_errors.push_str("Assignment attempted without value!\n");
-                        continue
-                    }
+                IDENTIFIER => {
+                    // Length of identifier.
+                    let length = self.code[self.index] as usize;
+                    self.index += 1;
 
-                    let identifier = self.read_identifier();
-                    match identifier {
-                        Ok(value) => {
-                            // NOTE: currently, assignments evaluate to whatever value was assigned.
-                            // Therefore, we do not bother popping the value from the stack.
-                            scope_var_binding.set_bind(String::from(value), *stack.first().unwrap())
-                        }
-                        Err(e) => {
-                            // Skip past the valid parts of the string and continue interpreting from the illegal index.
-                            // Maybe it was an instruction we can execute?
-                            // TODO: security problem, rethink approach.
-                            self.index += e.valid_up_to();
+                    // TODO: need generic stack of bytes, convert floats from it.
+                    let identifier = match str::from_utf8(&self.code[self.index..(self.index + length)]) {
+                        Ok(identifier) => identifier,
+                        Err(_) => {
+                            // Immediately terminate if a UTF conversion error occurs -- the source code is corrupted!
                             self.errors.push_str("Bytecode UTF conversion error. Expected: stream of valid UTF8 bytes for identifier.\n");
+                            return false
                         }
-                    }
-                },
-                READVAR => {
-                    let identifier = self.read_identifier();
-                    match identifier {
-                        Ok(name) => {
-                            if let Some(value) = scope_var_binding.get_bind(name) {
-                                stack.push(*value);
-                            } else {
-                                iteration_errors.push_str(format!("Variable {} not found!\n", name).as_str());
-                            }
-                        }
-                        Err(e) => {
-                            self.index += e.valid_up_to();
-                            iteration_errors.push_str("Bytecode UTF conversion error. Expected: stream of valid UTF8 bytes for identifier.\n");
-                        }
-                    }
+                    };
+
+                    // Now, push name and length of identifier onto stack.
+                    // stack.extend_from_slice(identifier.bytes())
+
+                }
+                VARREAD => {
+                    // TODO: implement after stack made polymorphic (multiple data types now on stack, need generic bytes)
+                    // let identifier = self.read_identifier();
+                    // match identifier {
+                    //     Ok(name) => {
+                    //         if let Some(value) = scope_var_binding.get_bind(name) {
+                    //             stack.push(*value);
+                    //         } else {
+                    //             iteration_errors.push_str(format!("Variable {} not found!\n", name).as_str());
+                    //         }
+                    //     }
+                    //     Err(e) => {
+                    //         self.index += e.valid_up_to();
+                    //         iteration_errors.push_str("Bytecode UTF conversion error. Expected: stream of valid UTF8 bytes for identifier.\n");
+                    //     }
+                    // }
+                }
+                VARWRITE => {
+                    // TODO: implement after stack made polymorphic (multiple data types now on stack)
                 }
                 PUSH => {
                     let mut immediate_bytes = [0u8; IMM_LEN];
@@ -134,34 +134,11 @@ impl InterpreterState<'_> {
     }
 }
 
-/*
- * Interpretation helpers.
- */
-impl InterpreterState<'_> {
-
-    /**
-     * Read an identifier name from the top of the program stack.
-     * If an identifier was read, move the program counter past its last byte.
-     * Return whether the identifier name was successfully converted into a UTF8 string.
-     */
-    fn read_identifier(&mut self) -> Result<&str, Utf8Error> {
-        // Length of identifier.
-        let length = self.code[self.index] as usize;
-        self.index += 1;
-
-        let identifier = str::from_utf8(&self.code[self.index..(self.index + length)]);
-        if let Ok(identifier) = identifier {
-            self.index += identifier.len();
-        }
-        identifier
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::bytecode::bytecode_interpreter::execute;
     use crate::bytecode::opcode::Opcode;
-    use crate::bytecode::opcode::Opcode::{ASSIGN, DIVIDE, MULTIPLY, PUSH, READVAR, SUBTRACT};
+    use crate::bytecode::opcode::Opcode::{VARWRITE, DIVIDE, MULTIPLY, PUSH, VARREAD, SUBTRACT};
 
     #[test]
     fn test_add() {
@@ -284,7 +261,7 @@ mod tests {
         code.push(Opcode::byte_from_opcode(&SUBTRACT));
 
         let identifier = "value_a";
-        code.push(Opcode::byte_from_opcode(&ASSIGN));
+        code.push(Opcode::byte_from_opcode(&VARWRITE));
         code.push(identifier.len() as u8);
         code.extend_from_slice(identifier.as_bytes());
 
@@ -292,7 +269,7 @@ mod tests {
         assert_eq!(execute(&code).unwrap(), -4.0);
 
         // Additionally, we can dereference that lval.
-        code.push(Opcode::byte_from_opcode(&READVAR));
+        code.push(Opcode::byte_from_opcode(&VARREAD));
         code.push(identifier.len() as u8);
         code.extend_from_slice(identifier.as_bytes());
 

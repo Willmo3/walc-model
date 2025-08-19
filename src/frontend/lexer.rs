@@ -208,7 +208,6 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::ast::ASTNode::Assignment;
     use crate::frontend::lexer::{lex, Lexeme};
     use crate::frontend::lexer::LexemeType::{Numeric, OpenParen, Plus, Slash, Star, CloseParen, EOF, DoubleStar, Identifier, Equals, Semicolon};
 

@@ -35,9 +35,7 @@ Note that other public fields exist, which may be viewed on the `crates.io` pack
 start = statement* expr
 statement = expr SEMICOLON
 
-expr = add (assign)*
-assign = EQUALS add
-
+expr = add (EQUALS add)*
 add = mult ((PLUS | MINUS) mult)*
 mult = exp ((STAR | SLASH) exp)*
 exp = [atom (DOUBLESTAR)] exp
