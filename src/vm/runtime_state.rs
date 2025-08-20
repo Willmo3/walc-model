@@ -32,7 +32,6 @@ impl<'a> RuntimeState<'a> {
                     let length = self.code[self.pc] as usize;
                     self.pc += 1;
 
-                    // TODO: need generic stack of bytes, convert floats from it.
                     let identifier = match std::str::from_utf8(&self.code[self.pc..(self.pc + length)]) {
                         Ok(identifier) => identifier,
                         Err(_) => {
@@ -67,7 +66,7 @@ impl<'a> RuntimeState<'a> {
                     // TODO: implement after stack made polymorphic (multiple data types now on stack)
                 }
                 PUSH => {
-                    match self.float_from_code() {
+                    match self.convert_float_from_code() {
                         Ok (float) => {
                             self.stack.extend_from_slice(&float.to_le_bytes());
                             self.pc += IMM_LEN;
@@ -119,8 +118,6 @@ impl<'a> RuntimeState<'a> {
         self.errors.is_empty()
     }
 
-    // TODO: separate data structure for stack.
-
     /// Pop the top of the program stack, turning it into code, if possible.
     /// If not, return error message.
     pub(crate) fn pop_float_from_stack(&mut self) -> Result<f64, String> {
@@ -142,7 +139,7 @@ impl<'a> RuntimeState<'a> {
     }
 
     /// Return the next 8 bytes of code as a string, or a conversion error.
-    fn float_from_code(&self) -> Result<f64, String> {
+    fn convert_float_from_code(&self) -> Result<f64, String> {
         if self.pc + IMM_LEN >= self.code.len() {
             return Err("Not enough bytes to convert static code into float.\n".to_string());
         }
