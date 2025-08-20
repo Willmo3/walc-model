@@ -25,7 +25,7 @@ struct Parser {
 // Parse methods
 impl Parser {
     fn parse(&mut self) -> Result<ASTNode, String> {
-        let ast = self.parse_assign();
+        let ast = self.parse_varwrite();
         match ast {
             Ok(ast) => {
                 // Complain if some of AST ignored.
@@ -39,30 +39,33 @@ impl Parser {
         }
     }
 
-    fn parse_assign(&mut self) -> Result<ASTNode, String> {
-        let mut left = self.parse_add();
+    fn parse_varwrite(&mut self) -> Result<ASTNode, String> {
+        // Root of right associative exponentiation ast.
+        let mut root_expression = self.parse_add();
 
-        // If left is an error message, prime our error reporting with its data
-        let mut err_message = if let Err(message) = &left {
+        let mut err_message = if let Err(message) = &root_expression {
             message.clone()
         } else {
             String::new()
         };
 
-        // Parse an arbitrarily long chain of assignment expressions.
-        while self.current().lexeme_type == Equals {
+        // If the next lexeme is an equals sign, recurse!
+        if self.current().lexeme_type == Equals {
             self.advance();
-            let right = match self.parse_add() {
-                Ok (ast) => { Ok (ast) }
-                Err(error) => { err_message.push_str(&error); Err(error) }
+
+            // Parse the rhs of the assignment
+            let right = match self.parse_varwrite() {
+                Ok(ast) => { Ok(ast) }
+                Err(e) => { err_message.push_str(&e); Err(e) }
             };
 
-            if !left.is_err() && !right.is_err() {
-                left = Ok (VarWrite { left: Box::new(left?), right: Box::new(right?) });
+            if root_expression.is_err() || right.is_err() {
+                root_expression = Err(err_message);
+            } else {
+                root_expression = Ok(VarWrite { left: Box::new(root_expression?), right: Box::new(right?)})
             }
         }
-
-        left
+        root_expression
     }
 
     fn parse_add(&mut self) -> Result<ASTNode, String> {
@@ -168,11 +171,10 @@ impl Parser {
                 Err(error ) => { err_message.push_str(&error); Err(error) }
             };
 
-            // Return error if message empty.
-            if !root_expression.is_err() && !right.is_err() {
-                root_expression = Ok(ASTNode::Exponentiate { left: Box::new(root_expression?), right: Box::new(right?) })
-            } else {
+            if root_expression.is_err() || right.is_err() {
                 root_expression = Err(err_message)
+            } else {
+                root_expression = Ok(ASTNode::Exponentiate { left: Box::new(root_expression?), right: Box::new(right?) })
             }
         }
         // Base case: no doublestar on horizon.
@@ -195,6 +197,11 @@ impl Parser {
                     self.advance();
                     value
                 }
+            }
+            Identifier => {
+                let name = self.current().text.clone();
+                self.advance();
+                Ok (ASTNode::Identifier { name })
             }
             _ => {
                 self.parse_number()

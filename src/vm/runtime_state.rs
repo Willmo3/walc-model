@@ -41,29 +41,45 @@ impl<'a> RuntimeState<'a> {
                         }
                     };
 
-                    // Now, push name and length of identifier onto stack.
-                    // stack.extend_from_slice(identifier.bytes())
-
+                    self.push_identifier_to_stack(identifier);
                 }
                 VARREAD => {
-                    // TODO: implement after stack made polymorphic (multiple data types now on stack, need generic bytes)
-                    // let identifier = self.read_identifier();
-                    // match identifier {
-                    //     Ok(name) => {
-                    //         if let Some(value) = scope_var_binding.get_bind(name) {
-                    //             stack.push(*value);
-                    //         } else {
-                    //             iteration_errors.push_str(format!("Variable {} not found!\n", name).as_str());
-                    //         }
-                    //     }
-                    //     Err(e) => {
-                    //         self.index += e.valid_up_to();
-                    //         iteration_errors.push_str("Bytecode UTF conversion error. Expected: stream of valid UTF8 bytes for identifier.\n");
-                    //     }
-                    // }
+                    let identifier = match self.pop_identifier_from_stack() {
+                        Ok(identifier) => { identifier }
+                        Err(e) => {
+                            self.errors.push_str(&*e);
+                            // If no identifier was found on the stack, and we didn't already catch this structural error during parsing, no further options possible.
+                            return false
+                        }
+                    };
+
+                    match scope_binding.get_bind(&identifier) {
+                        None => { self.errors.push_str(format!("Tried to read variable {}, but no such variable found!\n", identifier).as_str()) }
+                        Some(var) => { self.push_float_to_stack(*var) }
+                    }
                 }
                 VARWRITE => {
-                    // TODO: implement after stack made polymorphic (multiple data types now on stack)
+                    // Pop the value to write from the stack.
+                    let value = match self.pop_float_from_stack() {
+                        Ok(value) => { value }
+                        Err(e) => { self.errors.push_str(&*e); return false }
+                    };
+
+                    // Next, pop the identifier we should write this value to from the stack.
+                    let rval = match self.pop_identifier_from_stack() {
+                        Ok(identifier) => { identifier }
+                        Err(e) => {
+                            self.errors.push_str(&*e);
+                            // If no identifier was found on the stack, and we didn't already catch this structural error during parsing, no further options possible.
+                            return false
+                        }
+                    };
+
+                    // Assign the new value into our scope binding.
+                    scope_binding.set_bind(rval, value);
+
+                    // And push the value we assigned back on the stack
+                    self.push_float_to_stack(value);
                 }
                 PUSH => {
                     match self.convert_float_from_code() {
@@ -137,6 +153,34 @@ impl<'a> RuntimeState<'a> {
     fn push_float_to_stack(&mut self, float: f64) {
         self.stack.extend_from_slice(float.to_le_bytes().as_slice());
     }
+
+    /// Push an identifier onto the stack, following with its length as a single byte.
+    fn push_identifier_to_stack(&mut self, identifier: &str) {
+        let length = identifier.len();
+        if length > u8::MAX as usize {
+            panic!("Identifier length exceeds the maximum allowed length.");
+        }
+        self.stack.extend_from_slice(&identifier.as_bytes());
+        self.stack.push(length as u8);
+    }
+
+    fn pop_identifier_from_stack(&mut self) -> Result<String, String> {
+        let length = match self.stack.pop() {
+            Some(length) => { length as usize }
+            None => { return Err("Expected identifier on stack, found none.".to_string()) }
+        };
+
+        if self.stack.len() < length {
+            return Err(format!("Expected identifier of length {} on top of stack, but found too few bytes on stack!\n", self.stack.len()));
+        }
+
+        let bytes = &self.stack[self.stack.len() - length..self.stack.len()];
+        match std::str::from_utf8(bytes) {
+            Ok(identifier) => { Ok(identifier.to_string()) }
+            Err(e) => { Err(e.to_string()) }
+        }
+    }
+
 
     /// Return the next 8 bytes of code as a string, or a conversion error.
     fn convert_float_from_code(&self) -> Result<f64, String> {

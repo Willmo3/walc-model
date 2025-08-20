@@ -15,6 +15,7 @@ pub enum ASTNode {
     // Variable accesses.
     Identifier { name: String },
     VarWrite { left: Box<ASTNode>, right: Box<ASTNode> },
+    // TODO: remove VarRead -- instead, determine that an identifier should be read based on its context.
     VarRead { child: Box<ASTNode> },
 
     // Operations
