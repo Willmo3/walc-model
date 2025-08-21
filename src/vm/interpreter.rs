@@ -1,7 +1,4 @@
-use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, MULTIPLY, PUSH, SUBTRACT, VARWRITE, VARREAD, IDENTIFIER};
 use crate::vm::scope_binding::Binding;
-use std::str;
 use crate::vm::runtime_state::RuntimeState;
 
 const IMM_LEN: usize = 8;
@@ -23,7 +20,7 @@ pub fn execute(bytes: &Vec<u8>) -> Result<f64, String> {
 mod tests {
     use crate::vm::interpreter::execute;
     use crate::bytecode::opcode::Opcode;
-    use crate::bytecode::opcode::Opcode::{VARWRITE, DIVIDE, MULTIPLY, PUSH, VARREAD, SUBTRACT};
+    use crate::bytecode::opcode::Opcode::{VARWRITE, DIVIDE, MULTIPLY, PUSH, SUBTRACT, IDENTIFIER};
 
     #[test]
     fn test_add() {
@@ -154,7 +151,7 @@ mod tests {
         assert_eq!(execute(&code).unwrap(), -4.0);
 
         // Additionally, we can dereference that lval.
-        code.push(Opcode::byte_from_opcode(&VARREAD));
+        code.push(Opcode::byte_from_opcode(&IDENTIFIER));
         code.push(identifier.len() as u8);
         code.extend_from_slice(identifier.as_bytes());
 

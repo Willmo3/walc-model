@@ -5,7 +5,7 @@
 
 use crate::ast::ast::ASTNode;
 use crate::bytecode::opcode::Opcode;
-use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, VARREAD, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, SUBTRACT};
 
 
 /// Given an ast, generate a list of bytes corresponding to walc bytecode.
@@ -30,7 +30,6 @@ pub fn generate(ast: &ASTNode) -> Vec<u8> {
             ASTNode::Subtract { .. } => code.push(Opcode::byte_from_opcode(&SUBTRACT)),
             ASTNode::Multiply { .. } => code.push(Opcode::byte_from_opcode(&MULTIPLY)),
             ASTNode::Divide { .. } => code.push(Opcode::byte_from_opcode(&DIVIDE)),
-            ASTNode::VarRead { .. } => code.push(Opcode::byte_from_opcode(&VARREAD)),
             ASTNode::VarWrite { .. } => code.push(Opcode::byte_from_opcode(&VARWRITE)),
             ASTNode::Exponentiate { .. } => code.push(Opcode::byte_from_opcode(&EXP)),
         }

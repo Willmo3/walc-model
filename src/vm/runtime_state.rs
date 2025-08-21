@@ -1,5 +1,5 @@
 use crate::bytecode::opcode::{Opcode, IMM_LEN};
-use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, SUBTRACT, VARREAD, VARWRITE};
+use crate::bytecode::opcode::Opcode::{ADD, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, SUBTRACT, VARWRITE};
 use crate::vm::scope_binding::Binding;
 
 /// Runtime state for a program execution.
@@ -42,21 +42,6 @@ impl<'a> RuntimeState<'a> {
                     };
 
                     self.push_identifier_to_stack(identifier);
-                }
-                VARREAD => {
-                    let identifier = match self.pop_identifier_from_stack() {
-                        Ok(identifier) => { identifier }
-                        Err(e) => {
-                            self.errors.push_str(&*e);
-                            // If no identifier was found on the stack, and we didn't already catch this structural error during parsing, no further options possible.
-                            return false
-                        }
-                    };
-
-                    match scope_binding.get_bind(&identifier) {
-                        None => { self.errors.push_str(format!("Tried to read variable {}, but no such variable found!\n", identifier).as_str()) }
-                        Some(var) => { self.push_float_to_stack(*var) }
-                    }
                 }
                 VARWRITE => {
                     // Pop the value to write from the stack.

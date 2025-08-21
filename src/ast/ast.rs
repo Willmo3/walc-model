@@ -15,8 +15,6 @@ pub enum ASTNode {
     // Variable accesses.
     Identifier { name: String },
     VarWrite { left: Box<ASTNode>, right: Box<ASTNode> },
-    // TODO: remove VarRead -- instead, determine that an identifier should be read based on its context.
-    VarRead { child: Box<ASTNode> },
 
     // Operations
     Exponentiate { left: Box<ASTNode>, right: Box<ASTNode> },
@@ -40,10 +38,6 @@ impl ASTNode {
                 | ASTNode::VarWrite { left, right } => {
                 left.postorder_traverse(visit_fn);
                 right.postorder_traverse(visit_fn);
-            }
-            // Unary operations: one child
-            ASTNode::VarRead { child} => {
-                child.postorder_traverse(visit_fn);
             }
             // Atoms: no children
             _ => {}

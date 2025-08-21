@@ -1,6 +1,6 @@
 // Operation API
 
-use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, VARREAD, SUBTRACT};
+use crate::bytecode::opcode::Opcode::{ADD, VARWRITE, DIVIDE, EXP, IDENTIFIER, MULTIPLY, PUSH, SUBTRACT};
 
 /// Opcodes supported by webwalc bytecode.
 pub enum Opcode {
@@ -14,7 +14,6 @@ pub enum Opcode {
     
     IDENTIFIER,
     VARWRITE,
-    VARREAD,
 }
 
 /// Size of an immediate value.
@@ -35,7 +34,6 @@ impl Opcode {
             
             IDENTIFIER => 6,
             VARWRITE => 7,
-            VARREAD => 8,
         }
     }
 
@@ -53,7 +51,6 @@ impl Opcode {
             
             6 => IDENTIFIER,
             7 => VARWRITE,
-            8 => VARREAD,
             _ => panic!("Unknown opcode {}", byte),
         }
     }
