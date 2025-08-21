@@ -12,6 +12,7 @@ mod vm {
     pub mod interpreter;
     mod runtime_state;
     mod scope_binding;
+    mod stack;
 }
 
 /// Walc AST operations, including treewalk interpreter.

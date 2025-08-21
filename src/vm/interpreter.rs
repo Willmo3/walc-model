@@ -11,7 +11,7 @@ pub fn execute(bytes: &Vec<u8>) -> Result<f64, String> {
     // Begin interpreting from the program's root scope, recursively descending lower.
     let mut root_frame = Binding::new();
     match runtime.interpret_scope(&mut root_frame) {
-        true => Ok(runtime.pop_float_from_stack()?),
+        true => Ok(runtime.stack.pop_float().unwrap()),
         false => Err(runtime.errors),
     }
 }
