@@ -42,6 +42,7 @@ impl<'a> RuntimeState<'a> {
                         }
                     };
 
+                    self.pc += identifier.len();
                     self.stack.push_identifer(identifier.to_string());
                 }
                 VARWRITE => {
@@ -50,14 +51,11 @@ impl<'a> RuntimeState<'a> {
                         continue
                     }
 
-
-                    // Pop the value to write from the stack.
                     let value = match self.stack.pop_float() {
                         Some(value) => { value }
                         None => { self.errors.push_str("Expected float from top of stack, found non-float data.\n"); continue }
                     };
 
-                    // Next, pop the identifier we should write this value to from the stack.
                     let rval = match self.stack.pop_identifier() {
                         Some(id) => { id }
                         None => { self.errors.push_str("Expected identifier from top of stack, found non-identifier data.\n"); continue }
@@ -70,6 +68,7 @@ impl<'a> RuntimeState<'a> {
                     self.stack.push_float(value);
                 }
                 PUSH => {
+                    // TODO: code abstraction
                     match self.convert_float_from_code() {
                         Ok (float) => {
                             self.stack.push_float(float);
